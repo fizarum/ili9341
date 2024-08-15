@@ -40,6 +40,7 @@ typedef struct {
    * Check datasheet for details: "8.2.29 Memory Access Control (36h)" page 127
    */
   ColorMode_t colorMode;
+
   /**
    * @brief D/C gpio pin
    */
@@ -59,11 +60,9 @@ void Ili9341SetScrollArea(ILI9341_t *dev, _u16 tfa, _u16 vsa, _u16 bfa);
 void Ili9341ResetScrollArea(ILI9341_t *dev, _u16 vsa);
 void Ili9341Scroll(ILI9341_t *dev, _u16 vsp);
 
-// draw API
 void Ili9341DrawPixel(ILI9341_t *dev, _u16 x, _u16 y, _u16 color);
 void Ili9341DrawPixels(ILI9341_t *dev, _u16 left, _u16 right, _u16 top,
                        _u16 bottom, _u16 color);
-void Ili9341FillScreen(ILI9341_t *dev, _u16 color);
 
 #ifdef __cplusplus
 }
