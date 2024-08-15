@@ -27,7 +27,8 @@
 #define VCOM_CTRL1 0xC5
 #define VCOM_CTRL2 0xC7
 
-void Ili9341SelectRegion(ILI9341_t *dev, _u16 l, _u16 r, _u16 t, _u16 b);
+void Ili9341SelectRegion(_i8 dc, spi_device_handle_t handle, _u16 l, _u16 r,
+                         _u16 t, _u16 b);
 
 void Ili9341Init(ILI9341_t *dev, _i8 res) {
   spi_device_handle_t handle = dev->handle;
@@ -257,7 +258,7 @@ void Ili9341DrawPixels(ILI9341_t *dev, _u16 left, _u16 right, _u16 top,
     bottom = dev->height - 1;
   }
 
-  Ili9341SelectRegion(dev, left, right, top, bottom);
+  Ili9341SelectRegion(dev->dc, dev->handle, left, right, top, bottom);
   SPITransmitCommand(dev->dc, dev->handle, RAMWR);
 
   // case of drawing one pixel - optimized part
@@ -273,14 +274,11 @@ void Ili9341DrawPixels(ILI9341_t *dev, _u16 left, _u16 right, _u16 top,
   }
 }
 
-void Ili9341FillScreen(ILI9341_t *dev, _u16 color) {
-  Ili9341DrawPixels(dev, 0, dev->width - 1, 0, dev->height - 1, color);
-}
+void Ili9341SelectRegion(_i8 dc, spi_device_handle_t handle, _u16 l, _u16 r,
+                         _u16 t, _u16 b) {
+  SPITransmitCommand(dc, handle, CASET);
+  SPITransmitDataDWord(dc, handle, l, r);
 
-void Ili9341SelectRegion(ILI9341_t *dev, _u16 l, _u16 r, _u16 t, _u16 b) {
-  SPITransmitCommand(dev->dc, dev->handle, CASET);
-  SPITransmitDataDWord(dev->dc, dev->handle, l, r);
-
-  SPITransmitCommand(dev->dc, dev->handle, PASET);
-  SPITransmitDataDWord(dev->dc, dev->handle, t, b);
+  SPITransmitCommand(dc, handle, PASET);
+  SPITransmitDataDWord(dc, handle, t, b);
 }
