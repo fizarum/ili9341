@@ -2,6 +2,7 @@
 
 #include <driver/gpio.h>
 
+#include "freertos/semphr.h"
 #include "freertos/task.h"
 
 #define CASET 0x2A     // set column(x) address
@@ -27,10 +28,13 @@
 #define VCOM_CTRL1 0xC5
 #define VCOM_CTRL2 0xC7
 
+static SemaphoreHandle_t mutex;
+
 void Ili9341SelectRegion(_i8 dc, spi_device_handle_t handle, _u16 l, _u16 r,
                          _u16 t, _u16 b);
 
 void Ili9341Init(ILI9341_t *dev, _i8 res) {
+  mutex = xSemaphoreCreateMutex();
   spi_device_handle_t handle = dev->handle;
   _u16 dc = dev->dc;
 
@@ -124,8 +128,11 @@ void Ili9341Init(ILI9341_t *dev, _i8 res) {
 }
 
 esp_err_t Ili9341PowerOn(ILI9341_t *dev, bool on) {
-  return SPITransmitCommand(dev->dc, dev->handle,
-                            on == true ? DISPON : DISPOFF);
+  xSemaphoreTake(mutex, portMAX_DELAY);
+  esp_err_t result =
+      SPITransmitCommand(dev->dc, dev->handle, on == true ? DISPON : DISPOFF);
+  xSemaphoreGive(mutex);
+  return result;
 }
 
 esp_err_t Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation) {
@@ -133,6 +140,7 @@ esp_err_t Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation) {
     return ESP_OK;
   }
 
+  xSemaphoreTake(mutex, portMAX_DELAY);
   _u8 mx, my, mv = 0x00;
 
   bool isOldModePortrait =
@@ -181,18 +189,28 @@ esp_err_t Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation) {
     dev->offsety = temp;
   }
   dev->rotation = rotation;
-  return SPITransmitData(dev->dc, dev->handle, mx | my | mv | (dev->colorMode));
+  esp_err_t result =
+      SPITransmitData(dev->dc, dev->handle, mx | my | mv | (dev->colorMode));
+  xSemaphoreGive(mutex);
+
+  return result;
 }
 
 esp_err_t Ili9341SetInversion(ILI9341_t *dev, const bool inversionOn) {
-  return SPITransmitCommand(dev->dc, dev->handle,
-                            inversionOn == true ? DINVON : DINVOFF);
+  xSemaphoreTake(mutex, portMAX_DELAY);
+  esp_err_t result = SPITransmitCommand(dev->dc, dev->handle,
+                                        inversionOn == true ? DINVON : DINVOFF);
+  xSemaphoreGive(mutex);
+  return result;
 }
 
 esp_err_t Ili9341SetColorMode(ILI9341_t *dev, const ColorMode_t mode) {
   dev->colorMode = mode;
+  xSemaphoreTake(mutex, portMAX_DELAY);
   SPITransmitCommand(dev->dc, dev->handle, MADCTL);
-  return SPITransmitData(dev->dc, dev->handle, mode);
+  esp_err_t result = SPITransmitData(dev->dc, dev->handle, mode);
+  xSemaphoreGive(mutex);
+  return result;
 }
 
 /**
@@ -208,17 +226,21 @@ esp_err_t Ili9341SetColorMode(ILI9341_t *dev, const ColorMode_t mode) {
  * Memory and Display). TFA, VSA and BFA refer to the Frame Memory Line Pointer.
  */
 void Ili9341SetScrollArea(ILI9341_t *dev, _u16 tfa, _u16 vsa, _u16 bfa) {
+  xSemaphoreTake(mutex, portMAX_DELAY);
   SPITransmitCommand(dev->dc, dev->handle, VSCRDEF);
   SPITransmitDataWord(dev->dc, dev->handle, tfa);
   SPITransmitDataWord(dev->dc, dev->handle, vsa);
   SPITransmitDataWord(dev->dc, dev->handle, bfa);
+  xSemaphoreGive(mutex);
 }
 
 void Ili9341ResetScrollArea(ILI9341_t *dev, _u16 vsa) {
+  xSemaphoreTake(mutex, portMAX_DELAY);
   SPITransmitCommand(dev->dc, dev->handle, VSCRDEF);
   SPITransmitDataWord(dev->dc, dev->handle, 0);
   SPITransmitDataWord(dev->dc, dev->handle, vsa);
   SPITransmitDataWord(dev->dc, dev->handle, 0);
+  xSemaphoreGive(mutex);
 }
 
 /**
@@ -229,8 +251,10 @@ void Ili9341ResetScrollArea(ILI9341_t *dev, _u16 vsa) {
  * the last line of the Top Fixed Area on the display
  */
 void Ili9341Scroll(ILI9341_t *dev, _u16 vsp) {
+  xSemaphoreTake(mutex, portMAX_DELAY);
   SPITransmitCommand(dev->dc, dev->handle, VSCRSADD);
   SPITransmitDataWord(dev->dc, dev->handle, vsp);
+  xSemaphoreGive(mutex);
 }
 
 void Ili9341DrawPixel(ILI9341_t *dev, _u16 x, _u16 y, _u16 color) {
@@ -258,20 +282,26 @@ void Ili9341DrawPixels(ILI9341_t *dev, _u16 left, _u16 right, _u16 top,
     bottom = dev->height - 1;
   }
 
-  Ili9341SelectRegion(dev->dc, dev->handle, left, right, top, bottom);
-  SPITransmitCommand(dev->dc, dev->handle, RAMWR);
+  int16_t dc = dev->dc;
+  spi_device_handle_t handle = dev->handle;
+
+  xSemaphoreTake(mutex, portMAX_DELAY);
+  Ili9341SelectRegion(dc, handle, left, right, top, bottom);
+  SPITransmitCommand(dc, handle, RAMWR);
 
   // case of drawing one pixel - optimized part
   if (left == right && top == bottom) {
-    SPITransmitDataWord(dev->dc, dev->handle, color);
+    SPITransmitDataWord(dc, handle, color);
+    xSemaphoreGive(mutex);
     return;
   }
 
   _u16 pixelsCountToFill = bottom - top + 1;
 
   for (_u16 x = left; x <= right; x++) {
-    SPITransmitDataTimes(dev->dc, dev->handle, color, pixelsCountToFill);
+    SPITransmitDataTimes(dc, handle, color, pixelsCountToFill);
   }
+  xSemaphoreGive(mutex);
 }
 
 void Ili9341SelectRegion(_i8 dc, spi_device_handle_t handle, _u16 l, _u16 r,
