@@ -3,17 +3,13 @@
 #include <driver/gpio.h>
 #include <driver/spi_common.h>
 #include <hal/gpio_types.h>
-#include <string.h>
-
-#include "freertos/semphr.h"
 
 #define DC_C 0
 #define DC_D 1
 #define SPI_BYTE_BUFF_MAX_SIZE 1024
 
-static SemaphoreHandle_t mutex;
-
 static _u8 _spi_buffer[SPI_BYTE_BUFF_MAX_SIZE];
+static spi_transaction_t _transaction;
 
 esp_err_t PinSetAsOutput(const _i8 pin, const _u8 state) {
   if (pin < 0) {
@@ -62,8 +58,6 @@ esp_err_t SPIInit(spi_device_handle_t *handle, spi_host_device_t host, _u8 mosi,
       .flags = SPI_DEVICE_NO_DUMMY,
   };
 
-  mutex = xSemaphoreCreateMutex();
-
   return spi_bus_add_device(host, &devConfig, handle);
 }
 
@@ -73,71 +67,57 @@ esp_err_t SPITransmit(spi_device_handle_t handle, const _u8 *data,
     return ESP_OK;
   }
 
-  xSemaphoreTake(mutex, portMAX_DELAY);
+  _transaction.flags = 0;
+  _transaction.cmd = 0;
+  _transaction.addr = 0;
+  _transaction.length = length * 8;
+  _transaction.tx_buffer = data;
 
-  spi_transaction_t transaction = {
-      .flags = 0,
-      .cmd = 0,
-      .addr = 0,
-      .length = length * 8,
-      .tx_buffer = data,
-  };
-
-  esp_err_t result = spi_device_transmit(handle, &transaction);
-  xSemaphoreGive(mutex);
-
-  return result;
+  return spi_device_transmit(handle, &_transaction);
 }
 
 esp_err_t SPITransmitCommand(_i8 dc, spi_device_handle_t handle,
                              const _u8 cmd) {
-  static _u8 byte = 0;
-  byte = cmd;
+  _spi_buffer[0] = cmd;
   gpio_set_level(dc, DC_C);
 
-  return SPITransmit(handle, &byte, 1);
+  return SPITransmit(handle, _spi_buffer, 1);
 }
 
 esp_err_t SPITransmitCommandWord(_i8 dc, spi_device_handle_t handle,
                                  const _u16 cmd) {
-  static _u8 bytes[2];
-
-  bytes[0] = (cmd >> 8) & 0xff;
-  bytes[1] = cmd & 0xff;
+  _spi_buffer[0] = (cmd >> 8) & 0xff;
+  _spi_buffer[1] = cmd & 0xff;
   gpio_set_level(dc, DC_C);
 
-  return SPITransmit(handle, bytes, 2);
+  return SPITransmit(handle, _spi_buffer, 2);
 }
 
 esp_err_t SPITransmitData(_i8 dc, spi_device_handle_t handle, const _u8 data) {
-  static _u8 byte = 0;
-  byte = data;
+  _spi_buffer[0] = data;
   gpio_set_level(dc, DC_D);
 
-  return SPITransmit(handle, &byte, 1);
+  return SPITransmit(handle, _spi_buffer, 1);
 }
 
 esp_err_t SPITransmitDataWord(_i8 dc, spi_device_handle_t handle,
                               const _u16 data) {
-  static _u8 bytes[2];
-
-  bytes[0] = (data >> 8) & 0xff;
-  bytes[1] = data & 0xff;
+  _spi_buffer[0] = (data >> 8) & 0xff;
+  _spi_buffer[1] = data & 0xff;
   gpio_set_level(dc, DC_D);
 
-  return SPITransmit(handle, bytes, 2);
+  return SPITransmit(handle, _spi_buffer, 2);
 }
 
 esp_err_t SPITransmitDataDWord(_i8 dc, spi_device_handle_t handle,
                                const _u16 left, _u16 right) {
-  static _u8 bytes[4];
-  bytes[0] = (left >> 8) & 0xff;
-  bytes[1] = left & 0xff;
-  bytes[2] = (right >> 8) & 0xff;
-  bytes[3] = right & 0xff;
+  _spi_buffer[0] = (left >> 8) & 0xff;
+  _spi_buffer[1] = left & 0xff;
+  _spi_buffer[2] = (right >> 8) & 0xff;
+  _spi_buffer[3] = right & 0xff;
   gpio_set_level(dc, DC_D);
 
-  return SPITransmit(handle, bytes, 4);
+  return SPITransmit(handle, _spi_buffer, 4);
 }
 
 esp_err_t SPITransmitDataTimes(_i8 dc, spi_device_handle_t handle, _u16 value,
@@ -148,9 +128,6 @@ esp_err_t SPITransmitDataTimes(_i8 dc, spi_device_handle_t handle, _u16 value,
     return ESP_ERR_INVALID_ARG;
   }
 
-  memset(_spi_buffer, 0, SPI_BYTE_BUFF_MAX_SIZE);
-
-  // static _u8 bytes[SPI_BYTE_BUFF_MAX_SIZE];
   _u16 index = 0;
 
   for (_u16 i = 0; i < times; i++) {
@@ -169,8 +146,6 @@ esp_err_t SPITransmitDataArray(_i8 dc, spi_device_handle_t handle, _u16 *array,
   if (bytesCount >= SPI_BYTE_BUFF_MAX_SIZE) {
     return ESP_ERR_INVALID_ARG;
   }
-
-  memset(_spi_buffer, 0, SPI_BYTE_BUFF_MAX_SIZE);
 
   _u16 index = 0;
 
