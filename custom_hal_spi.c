@@ -41,9 +41,9 @@ esp_err_t SPIInit(spi_device_handle_t *handle, spi_host_device_t host, _u8 mosi,
   spi_bus_config_t busConfig = {
       .sclk_io_num = sclk,
       .mosi_io_num = mosi,
-      .miso_io_num = -1,
-      .quadwp_io_num = -1,
-      .quadhd_io_num = -1,
+      .miso_io_num = GPIO_NUM_NC,
+      .quadwp_io_num = GPIO_NUM_NC,
+      .quadhd_io_num = GPIO_NUM_NC,
   };
 
   esp_err_t result = spi_bus_initialize(host, &busConfig, SPI_DMA_CH_AUTO);
@@ -52,7 +52,7 @@ esp_err_t SPIInit(spi_device_handle_t *handle, spi_host_device_t host, _u8 mosi,
   }
 
   spi_device_interface_config_t devConfig = {
-      .clock_speed_hz = SPI_MASTER_FREQ_10M,
+      .clock_speed_hz = SPI_MASTER_FREQ_40M,
       .spics_io_num = cs,
       .queue_size = 7,
       .flags = SPI_DEVICE_NO_DUMMY,
