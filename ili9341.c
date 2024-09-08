@@ -70,12 +70,16 @@ void Ili9341Init(ILI9341_t *dev, _i8 res) {
 
   SPITransmitCommand(dc, handle, FRMCTR1);
   SPITransmitData(dc, handle, 0x00);
-  SPITransmitData(dc, handle, 0x18);
+  // Frame Rate - 100 Hz
+  SPITransmitData(dc, handle, 0x13);
 
   SPITransmitCommand(dc, handle, DISCTRL);
-  SPITransmitData(dc, handle, 0x08);
-  // REV:1 GS:0 SS:0 SM:0
-  SPITransmitData(dc, handle, 0xA2);
+  // Normal scan
+  SPITransmitData(dc, handle, 0x00);
+  // REV:0 - liqud crystal normally white
+  // GS:0 SS:1 SM:0
+  SPITransmitData(dc, handle, 0xA0);
+  // NL - 320 lines
   SPITransmitData(dc, handle, 0x27);
   SPITransmitData(dc, handle, 0x00);
 
