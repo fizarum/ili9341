@@ -47,16 +47,31 @@ void Ili9341Init(ILI9341_t *dev, _i8 res) {
   }
 
   SPITransmitCommand(dc, handle, POWER_CTRL1);
-  SPITransmitData(dc, handle, 0x23);
+  // SPITransmitData(dc, handle, 0x23);
+  /**
+  0x1F - 4.4V
+  0x17 - 4.0V
+  0x11 - 3.7V
+  0x09 - 3.3V
+  */
+  SPITransmitData(dc, handle, 0x09);
 
   SPITransmitCommand(dc, handle, POWER_CTRL2);
-  SPITransmitData(dc, handle, 0x10);
+  // BT[2:0] = 0x03, means VGH = VCI x 6, VGL = - VCI x 3
+  // lowest value and default
+  SPITransmitData(dc, handle, 0x03);
 
   SPITransmitCommand(dc, handle, VCOM_CTRL1);
-  SPITransmitData(dc, handle, 0x3E);
+  /**
+  VMH: 0x1E = 3.45V
+  0x3E = 5.850V
+  VML: 0x28 = -1.500V
+  */
+  SPITransmitData(dc, handle, 0x1E);
   SPITransmitData(dc, handle, 0x28);
 
   SPITransmitCommand(dc, handle, VCOM_CTRL2);
+  // VCOMH/VCOML voltage adjustment
   SPITransmitData(dc, handle, 0x86);
 
   Ili9341Rotate(dev, Angle270);
@@ -70,55 +85,49 @@ void Ili9341Init(ILI9341_t *dev, _i8 res) {
 
   SPITransmitCommand(dc, handle, FRMCTR1);
   SPITransmitData(dc, handle, 0x00);
-  // Frame Rate - 100 Hz
+  /**
+  Frame Rate:
+  0x1B = 70 Hz
+  0x19 = 76 Hz
+  0x15 = 90 Hz
+  0x13 = 100 Hz
+  */
   SPITransmitData(dc, handle, 0x13);
 
   SPITransmitCommand(dc, handle, DISCTRL);
-  // Normal scan
-  SPITransmitData(dc, handle, 0x00);
-  // REV:0 - liqud crystal normally white
-  // GS:0 SS:1 SM:0
-  SPITransmitData(dc, handle, 0xA0);
+  /**
+  PT = 0x02: Determine source/VCOM output in a non-display area in the partial
+  display mode.
+
+  PTG = 0x02: interval scan
+  */
+  SPITransmitData(dc, handle, 0x0A);
+  /**
+  REV:1 - liqud crystal normally white
+  GS:0 SS:1 SM:0
+  SS:1, means S720 -> S1 (because of rotated display)
+  ISC = 0x01 - scan cycle 3 frames (51 ms)
+  */
+  SPITransmitData(dc, handle, 0xA1);
   // NL - 320 lines
   SPITransmitData(dc, handle, 0x27);
   SPITransmitData(dc, handle, 0x00);
 
-  SPITransmitCommand(dc, handle, GAMSET);
-  SPITransmitData(dc, handle, 0x01);
-
   SPITransmitCommand(dc, handle, PGAMCTRL);
-  SPITransmitData(dc, handle, 0x0F);
-  SPITransmitData(dc, handle, 0x31);
-  SPITransmitData(dc, handle, 0x2B);
-  SPITransmitData(dc, handle, 0x0C);
-  SPITransmitData(dc, handle, 0x0E);
-  SPITransmitData(dc, handle, 0x08);
-  SPITransmitData(dc, handle, 0x4E);
-  SPITransmitData(dc, handle, 0xF1);
-  SPITransmitData(dc, handle, 0x37);
-  SPITransmitData(dc, handle, 0x07);
-  SPITransmitData(dc, handle, 0x10);
-  SPITransmitData(dc, handle, 0x03);
-  SPITransmitData(dc, handle, 0x0E);
-  SPITransmitData(dc, handle, 0x09);
-  SPITransmitData(dc, handle, 0x00);
+  _u8 pgc[] = {
+      0x1F, 0x1A, 0x18, 0x0A, 0x0F, 0x06, 0x45, 0x87,
+      0x32, 0x0A, 0x07, 0x02, 0x07, 0x05, 0x00,
+  };
+
+  SPITransmitDataArray(dc, handle, pgc, sizeof(pgc));
 
   SPITransmitCommand(dc, handle, NGAMCTRL);
-  SPITransmitData(dc, handle, 0x00);
-  SPITransmitData(dc, handle, 0x0E);
-  SPITransmitData(dc, handle, 0x14);
-  SPITransmitData(dc, handle, 0x03);
-  SPITransmitData(dc, handle, 0x11);
-  SPITransmitData(dc, handle, 0x07);
-  SPITransmitData(dc, handle, 0x31);
-  SPITransmitData(dc, handle, 0xC1);
-  SPITransmitData(dc, handle, 0x48);
-  SPITransmitData(dc, handle, 0x08);
-  SPITransmitData(dc, handle, 0x0F);
-  SPITransmitData(dc, handle, 0x0C);
-  SPITransmitData(dc, handle, 0x31);
-  SPITransmitData(dc, handle, 0x36);
-  SPITransmitData(dc, handle, 0x0F);
+  _u8 ngc[] = {
+      0x00, 0x25, 0x27, 0x05, 0x10, 0x09, 0x3A, 0x78,
+      0x4D, 0x05, 0x18, 0x0D, 0x38, 0x3A, 0x1F,
+  };
+
+  SPITransmitDataArray(dc, handle, ngc, sizeof(ngc));
 
   SPITransmitCommand(dc, handle, SLPOUT);
   /**

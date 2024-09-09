@@ -3,15 +3,15 @@
 
 #define rgb565(r, g, b) (((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3))
 
-#define COLOR_BLACK 0x0000           ///<   0,   0,   0
-#define COLOR_NAVY 0x000F            ///<   0,   0, 123
-#define COLOR_DARKGREEN 0x03E0       ///<   0, 125,   0
-#define COLOR_DARKCYAN 0x03EF        ///<   0, 125, 123
-#define COLOR_MAROON 0x7800          ///< 123,   0,   0
+#define COLOR_BLACK 0x0000           ///<   0,   0,   0 #000000
+#define COLOR_NAVY 0x000F            ///<   0,   0, 123 #00007b
+#define COLOR_DARKGREEN 0x03E0       ///<   0, 125,   0 #007d00
+#define COLOR_DARKCYAN 0x03EF        ///<   0, 125, 123 #007d7b
+#define COLOR_MAROON 0x7800          ///< 123,   0,   0 #7b0000
 #define COLOR_PURPLE 0x780F          ///< 123,   0, 123
 #define COLOR_OLIVE 0x7BE0           ///< 123, 125,   0
 #define COLOR_LIGHTGREY 0xC618       ///< 198, 195, 198
-#define COLOR_DARKGREY 0x7BEF        ///< 123, 125, 123
+#define COLOR_DARKGREY 0x7BEF        ///< 123, 125, 123 #7b7d7b
 #define COLOR_BLUE 0x001F            ///<   0,   0, 255
 #define COLOR_GREEN 0x07E0           ///<   0, 255,   0
 #define COLOR_CYAN 0x07FF            ///<   0, 255, 255
@@ -23,8 +23,8 @@
 #define COLOR_GREENYELLOW 0xAFE5     ///< 173, 255,  41
 #define COLOR_PINK 0xFC18            ///< 255, 130, 198
 #define COLOR_BROWN 0x9A60           ///< 150, 75,    0
-#define COLOR_GOLD 0xFEA0            ///< 255, 215,   0
-#define COLOR_SILVER 0xC618          ///< 192, 192, 192
+#define COLOR_GOLD 0xFEA0            ///< 255, 215,   0 #ffd700
+#define COLOR_SILVER 0xC618          ///< 192, 192, 192 #c0c0c0
 #define COLOR_SKYBLUE 0x867D         ///< 135, 206, 235 #87ceeb
 #define COLOR_VIOLET 0xEC1D          ///< 238, 130, 238 #ee82ee
 #define COLOR_PEARL 0xEF18           ///< 237, 228, 199 #ede4c7

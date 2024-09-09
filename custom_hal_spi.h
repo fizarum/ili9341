@@ -33,17 +33,18 @@ esp_err_t SPITransmitCommand(_i8 dc, spi_device_handle_t handle, const _u8 cmd);
 esp_err_t SPITransmitCommandWord(_i8 dc, spi_device_handle_t handle,
                                  const _u16 cmd);
 
-esp_err_t SPITransmitData(_i8 dc, spi_device_handle_t handle, _u8 data);
+esp_err_t SPITransmitData(_i8 dc, spi_device_handle_t handle, const _u8 data);
+esp_err_t SPITransmitDataArray(_i8 dc, spi_device_handle_t handle,
+                               const _u8 *dataArray, const _u16 arraySize);
 esp_err_t SPITransmitDataWord(_i8 dc, spi_device_handle_t handle,
                               const _u16 data);
+esp_err_t SPITransmitDataWordArray(_i8 dc, spi_device_handle_t handle,
+                                   const _u16 *dataArray, const _u16 arraySize);
 esp_err_t SPITransmitDataDWord(_i8 dc, spi_device_handle_t handle,
                                const _u16 first, _u16 second);
 
 esp_err_t SPITransmitDataTimes(_i8 dc, spi_device_handle_t handle, _u16 value,
                                _u16 times);
-
-esp_err_t SPITransmitDataArray(_i8 dc, spi_device_handle_t handle, _u16 *array,
-                               _u16 length);
 
 #ifdef __cplusplus
 }
