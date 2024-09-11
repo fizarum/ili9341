@@ -74,6 +74,11 @@ void Ili9341Init(ILI9341_t *dev, _i8 res) {
   // VCOMH/VCOML voltage adjustment
   SPITransmitData(dc, handle, 0x86);
 
+  // just give some time to apply some changes, when mcu has high
+  // clock speed (240 MHz, for example) this part works incorrectly
+  // without delay
+  vTaskDelay(pdMS_TO_TICKS(10));
+
   Ili9341Rotate(dev, Angle270);
 
   SPITransmitCommand(dc, handle, PIXSET);
@@ -142,18 +147,22 @@ void Ili9341Init(ILI9341_t *dev, _i8 res) {
 
 esp_err_t Ili9341PowerOn(ILI9341_t *dev, bool on) {
   xSemaphoreTake(mutex, portMAX_DELAY);
+
   esp_err_t result =
       SPITransmitCommand(dev->dc, dev->handle, on == true ? DISPON : DISPOFF);
+
   xSemaphoreGive(mutex);
   return result;
 }
 
 esp_err_t Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation) {
+  xSemaphoreTake(mutex, portMAX_DELAY);
+
   if (dev->rotation == rotation) {
+    xSemaphoreGive(mutex);
     return ESP_OK;
   }
 
-  xSemaphoreTake(mutex, portMAX_DELAY);
   _u8 mx, my, mv = 0x00;
 
   bool isOldModePortrait =
@@ -204,6 +213,7 @@ esp_err_t Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation) {
   dev->rotation = rotation;
   esp_err_t result =
       SPITransmitData(dev->dc, dev->handle, mx | my | mv | (dev->colorMode));
+
   xSemaphoreGive(mutex);
 
   return result;
@@ -211,17 +221,21 @@ esp_err_t Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation) {
 
 esp_err_t Ili9341SetInversion(ILI9341_t *dev, const bool inversionOn) {
   xSemaphoreTake(mutex, portMAX_DELAY);
+
   esp_err_t result = SPITransmitCommand(dev->dc, dev->handle,
                                         inversionOn == true ? DINVON : DINVOFF);
+
   xSemaphoreGive(mutex);
   return result;
 }
 
 esp_err_t Ili9341SetColorMode(ILI9341_t *dev, const ColorMode_t mode) {
-  dev->colorMode = mode;
   xSemaphoreTake(mutex, portMAX_DELAY);
+
+  dev->colorMode = mode;
   SPITransmitCommand(dev->dc, dev->handle, MADCTL);
   esp_err_t result = SPITransmitData(dev->dc, dev->handle, mode);
+
   xSemaphoreGive(mutex);
   return result;
 }
@@ -240,19 +254,23 @@ esp_err_t Ili9341SetColorMode(ILI9341_t *dev, const ColorMode_t mode) {
  */
 void Ili9341SetScrollArea(ILI9341_t *dev, _u16 tfa, _u16 vsa, _u16 bfa) {
   xSemaphoreTake(mutex, portMAX_DELAY);
+
   SPITransmitCommand(dev->dc, dev->handle, VSCRDEF);
   SPITransmitDataWord(dev->dc, dev->handle, tfa);
   SPITransmitDataWord(dev->dc, dev->handle, vsa);
   SPITransmitDataWord(dev->dc, dev->handle, bfa);
+
   xSemaphoreGive(mutex);
 }
 
 void Ili9341ResetScrollArea(ILI9341_t *dev, _u16 vsa) {
   xSemaphoreTake(mutex, portMAX_DELAY);
+
   SPITransmitCommand(dev->dc, dev->handle, VSCRDEF);
   SPITransmitDataWord(dev->dc, dev->handle, 0);
   SPITransmitDataWord(dev->dc, dev->handle, vsa);
   SPITransmitDataWord(dev->dc, dev->handle, 0);
+
   xSemaphoreGive(mutex);
 }
 
@@ -265,8 +283,10 @@ void Ili9341ResetScrollArea(ILI9341_t *dev, _u16 vsa) {
  */
 void Ili9341Scroll(ILI9341_t *dev, _u16 vsp) {
   xSemaphoreTake(mutex, portMAX_DELAY);
+
   SPITransmitCommand(dev->dc, dev->handle, VSCRSADD);
   SPITransmitDataWord(dev->dc, dev->handle, vsp);
+
   xSemaphoreGive(mutex);
 }
 
@@ -279,6 +299,7 @@ void Ili9341DrawPixel(ILI9341_t *dev, _u16 x, _u16 y, _u16 color) {
  */
 void Ili9341DrawPixels(ILI9341_t *dev, _u16 left, _u16 right, _u16 top,
                        _u16 bottom, _u16 color) {
+  xSemaphoreTake(mutex, portMAX_DELAY);
   left += dev->offsetx;
   right += dev->offsetx;
   top += dev->offsety;
@@ -298,7 +319,6 @@ void Ili9341DrawPixels(ILI9341_t *dev, _u16 left, _u16 right, _u16 top,
   int16_t dc = dev->dc;
   spi_device_handle_t handle = dev->handle;
 
-  xSemaphoreTake(mutex, portMAX_DELAY);
   Ili9341SelectRegion(dc, handle, left, right, top, bottom);
   SPITransmitCommand(dc, handle, RAMWR);
 
