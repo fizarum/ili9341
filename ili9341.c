@@ -5,29 +5,6 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 
-#define CASET 0x2A     // set column(x) address
-#define PASET 0x2B     // set Page(y) address
-#define RAMWR 0x2C     // Memory Write
-#define MADCTL 0x36    // Memory Access Control
-#define PIXSET 0x3A    // Pixel Format Set
-#define DINVOFF 0x20   // Display Inversion OFF
-#define DINVON 0x21    // Display Inversion
-#define FRMCTR1 0xB1   // Frame Rate Control
-#define DISCTRL 0xB6   // Display Function Control
-#define GAMSET 0x26    // Gamma Set
-#define PGAMCTRL 0xE0  // Positive Gamma Correction
-#define NGAMCTRL 0xE1  // Negative Gamma Correction
-#define SLPOUT 0x11    // Sleep Out
-#define DISPOFF 0x28   // Display OFF
-#define DISPON 0x29    // Display ON
-#define VSCRDEF 0x33   // Vertical Scrolling Definition
-#define VSCRSADD 0x37  // Vertical Scrolling Start Address
-
-#define POWER_CTRL1 0xC0
-#define POWER_CTRL2 0xC1
-#define VCOM_CTRL1 0xC5
-#define VCOM_CTRL2 0xC7
-
 static SemaphoreHandle_t mutex;
 
 void Ili9341SelectRegion(_i8 dc, spi_device_handle_t handle, _u16 l, _u16 r,

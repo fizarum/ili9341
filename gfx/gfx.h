@@ -5,10 +5,14 @@
 extern "C" {
 #endif
 
-#include "../font/font.h"
-#include "../ili9341.h"
+#include <types.h>
 
-void GFXInit(ILI9341_t *dev);
+#include "../font/font.h"
+
+typedef void (*GFX_Callback)(const _u16 left, const _u16 top, const _u16 right,
+                             const _u16 bottom, _u16 color);
+
+void GFXInit(const _u16 width, const _u16 height, GFX_Callback callback);
 
 // symbols drawing
 void GFXSetFont(Font_t *font);
@@ -19,10 +23,10 @@ void GFXDrawString(const char *string, _u16 xPos, _u16 yPos);
 // objects drawing
 void GFXDrawFilledRect(const _u16 left, const _u16 right, const _u16 top,
                        const _u16 bottom, const _u16 color);
-//..
-
 // utils
 void GFXFillScreen(const _u16 color);
+
+_u16 GFXGetFontColor();
 
 #ifdef __cplusplus
 }
