@@ -5,6 +5,7 @@
 #include <hal/gpio_types.h>
 #include <string.h>
 
+#include "esp_attr.h"
 #define DC_C 0
 #define DC_D 1
 #define SPI_BYTE_BUFF_MAX_SIZE 1024
@@ -65,8 +66,8 @@ esp_err_t SPIInit(spi_device_handle_t *handle, spi_host_device_t host, _u8 mosi,
   return spi_bus_add_device(host, &devConfig, handle);
 }
 
-esp_err_t SPITransmit(spi_device_handle_t handle, const _u8 *data,
-                      const size_t length) {
+esp_err_t IRAM_ATTR SPITransmit(spi_device_handle_t handle, const _u8 *data,
+                                const size_t length) {
   if (length <= 0) {
     return ESP_OK;
   }

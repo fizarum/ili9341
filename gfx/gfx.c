@@ -3,35 +3,38 @@
 #include <ctype.h>
 #include <string.h>
 
+#include "../palette.h"
 #include "../resources/symbols_res.h"
-#include "esp_log.h"
 
 // check is bit set, starting from most significant bit
 // 8-bit version
 #define GFX_IS_BIT_SET8(source, position) (source & (0x80 >> position))
 
-ILI9341_t *_displayDevice = NULL;
-Font_t *_activeFont = NULL;
+static Font_t *activeFont = NULL;
+static GFX_Callback drawCallback;
+static _u16 canvasWidth = 0;
+static _u16 canvasHeight = 0;
 
-void GFXInit(ILI9341_t *dev) {
-  _displayDevice = dev;
+void GFXInit(const _u16 width, const _u16 height, GFX_Callback callback) {
+  canvasWidth = width;
+  canvasHeight = height;
+  drawCallback = callback;
   SymbolsResInit();
 }
 
-void GFXSetFont(Font_t *font) { _activeFont = font; }
+void GFXSetFont(Font_t *font) { activeFont = font; }
 
 void GFXDrawSymbol(SymbolData_t *symbol, _u16 xPos, _u16 yPos) {
-  if (_displayDevice == NULL) return;
-  if (_activeFont == NULL) return;
+  if (activeFont == NULL) return;
 
-  if (_activeFont->scale == 0) {
-    _activeFont->scale = 1;
+  if (activeFont->scale == 0) {
+    activeFont->scale = 1;
   }
 
-  _u8 symbolWidth = _activeFont->width;
-  _u8 symbolHeight = _activeFont->height;
-  _u8 scale = _activeFont->scale;
-  _u16 color = _activeFont->color;
+  _u8 symbolWidth = activeFont->width;
+  _u8 symbolHeight = activeFont->height;
+  _u8 scale = activeFont->scale;
+  _u16 color = activeFont->color;
 
   _u16 scaledX = 0;
   _u16 scaledY = 0;
@@ -47,8 +50,9 @@ void GFXDrawSymbol(SymbolData_t *symbol, _u16 xPos, _u16 yPos) {
       if (GFX_IS_BIT_SET8(line, x)) {
         scaledX = xPos + x * scale;
         scaledY = yPos + y * scale;
-        Ili9341DrawPixels(_displayDevice, scaledX, scaledX + scale - 1, scaledY,
-                          scaledY + scale - 1, color);
+
+        drawCallback(scaledX, scaledY, scaledX + scale - 1, scaledY + scale - 1,
+                     color);
       }
     }
   }
@@ -70,14 +74,14 @@ void GFXDrawString(const char *string, _u16 xPos, _u16 yPos) {
   // height will contain actual size, when width is still 8 pt
   // for example, for 5x5 font its 8x5 (width x height).
   // Its known issue which will be fixed later
-  _u8 letterWidth = (_activeFont->height) * (_activeFont->scale);
-  _u8 spacing = _activeFont->scale;
+  _u8 letterWidth = (activeFont->height) * (activeFont->scale);
+  _u8 spacing = activeFont->scale;
 
   for (_u16 index = 0; index < length; index++) {
     letterInUpperCase = toupper(string[index]);
     GFXDrawChar(letterInUpperCase, x, yPos);
     x += letterWidth + spacing;
-    if (x >= _displayDevice->width) {
+    if (x >= canvasWidth) {
       // TODO: add logic for word/letter wrap, ellipsize, etc.
       return;
     }
@@ -86,12 +90,17 @@ void GFXDrawString(const char *string, _u16 xPos, _u16 yPos) {
 
 void GFXDrawFilledRect(const _u16 left, const _u16 right, const _u16 top,
                        const _u16 bottom, const _u16 color) {
-  Ili9341DrawPixels(_displayDevice, left, right, top, bottom, color);
+  drawCallback(left, top, right, bottom, color);
 }
 
 void GFXFillScreen(const _u16 color) {
-  if (_displayDevice == NULL) return;
+  drawCallback(0, 0, canvasWidth - 1, canvasHeight - 1, color);
+}
 
-  Ili9341DrawPixels(_displayDevice, 0, _displayDevice->width - 1, 0,
-                    _displayDevice->height - 1, color);
+_u16 GFXGetFontColor() {
+  if (activeFont == NULL) {
+    return 0;
+  }
+
+  return activeFont->color;
 }
