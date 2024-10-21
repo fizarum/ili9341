@@ -10,8 +10,8 @@
 #define DC_D 1
 #define SPI_BYTE_BUFF_MAX_SIZE 1024
 
-static _u8 _spiBuffer[SPI_BYTE_BUFF_MAX_SIZE];
-static spi_transaction_t _transaction;
+static _u8 buffer[SPI_BYTE_BUFF_MAX_SIZE];
+static spi_transaction_t transaction;
 
 esp_err_t PinSetAsOutput(const _i8 pin, const _u8 state) {
   if (pin < 0) {
@@ -72,54 +72,54 @@ esp_err_t IRAM_ATTR SPITransmit(spi_device_handle_t handle, const _u8 *data,
     return ESP_OK;
   }
 
-  _transaction.flags = 0;
-  _transaction.cmd = 0;
-  _transaction.addr = 0;
-  _transaction.length = length * 8;
-  _transaction.tx_buffer = data;
+  transaction.flags = 0;
+  transaction.cmd = 0;
+  transaction.addr = 0;
+  transaction.length = length * 8;
+  transaction.tx_buffer = data;
 
-  return spi_device_transmit(handle, &_transaction);
+  return spi_device_transmit(handle, &transaction);
 }
 
 esp_err_t SPITransmitCommand(_i8 dc, spi_device_handle_t handle,
                              const _u8 cmd) {
-  _spiBuffer[0] = cmd;
+  buffer[0] = cmd;
   gpio_set_level(dc, DC_C);
 
-  return SPITransmit(handle, _spiBuffer, 1);
+  return SPITransmit(handle, buffer, 1);
 }
 
 esp_err_t SPITransmitCommandWord(_i8 dc, spi_device_handle_t handle,
                                  const _u16 cmd) {
-  _spiBuffer[0] = (cmd >> 8) & 0xff;
-  _spiBuffer[1] = cmd & 0xff;
+  buffer[0] = (cmd >> 8) & 0xff;
+  buffer[1] = cmd & 0xff;
   gpio_set_level(dc, DC_C);
 
-  return SPITransmit(handle, _spiBuffer, 2);
+  return SPITransmit(handle, buffer, 2);
 }
 
 esp_err_t SPITransmitData(_i8 dc, spi_device_handle_t handle, const _u8 data) {
-  _spiBuffer[0] = data;
+  buffer[0] = data;
   gpio_set_level(dc, DC_D);
 
-  return SPITransmit(handle, _spiBuffer, 1);
+  return SPITransmit(handle, buffer, 1);
 }
 
 esp_err_t SPITransmitDataArray(_i8 dc, spi_device_handle_t handle,
                                const _u8 *dataArray, const _u16 arraySize) {
-  memcpy(_spiBuffer, dataArray, arraySize);
+  memcpy(buffer, dataArray, arraySize);
   gpio_set_level(dc, DC_D);
 
-  return SPITransmit(handle, _spiBuffer, arraySize);
+  return SPITransmit(handle, buffer, arraySize);
 }
 
 esp_err_t SPITransmitDataWord(_i8 dc, spi_device_handle_t handle,
                               const _u16 data) {
-  _spiBuffer[0] = (data >> 8) & 0xff;
-  _spiBuffer[1] = data & 0xff;
+  buffer[0] = (data >> 8) & 0xff;
+  buffer[1] = data & 0xff;
   gpio_set_level(dc, DC_D);
 
-  return SPITransmit(handle, _spiBuffer, 2);
+  return SPITransmit(handle, buffer, 2);
 }
 
 esp_err_t SPITransmitDataWordArray(_i8 dc, spi_device_handle_t handle,
@@ -134,23 +134,23 @@ esp_err_t SPITransmitDataWordArray(_i8 dc, spi_device_handle_t handle,
   _u16 index = 0;
 
   for (_u16 i = 0; i < arraySize; i++) {
-    _spiBuffer[index++] = (dataArray[i] >> 8) & 0xff;
-    _spiBuffer[index++] = dataArray[i] & 0xff;
+    buffer[index++] = (dataArray[i] >> 8) & 0xff;
+    buffer[index++] = dataArray[i] & 0xff;
   }
 
   gpio_set_level(dc, DC_D);
-  return SPITransmit(handle, _spiBuffer, bytesCount);
+  return SPITransmit(handle, buffer, bytesCount);
 }
 
 esp_err_t SPITransmitDataDWord(_i8 dc, spi_device_handle_t handle,
                                const _u16 left, _u16 right) {
-  _spiBuffer[0] = (left >> 8) & 0xff;
-  _spiBuffer[1] = left & 0xff;
-  _spiBuffer[2] = (right >> 8) & 0xff;
-  _spiBuffer[3] = right & 0xff;
+  buffer[0] = (left >> 8) & 0xff;
+  buffer[1] = left & 0xff;
+  buffer[2] = (right >> 8) & 0xff;
+  buffer[3] = right & 0xff;
   gpio_set_level(dc, DC_D);
 
-  return SPITransmit(handle, _spiBuffer, 4);
+  return SPITransmit(handle, buffer, 4);
 }
 
 esp_err_t SPITransmitDataTimes(_i8 dc, spi_device_handle_t handle, _u16 value,
@@ -164,10 +164,10 @@ esp_err_t SPITransmitDataTimes(_i8 dc, spi_device_handle_t handle, _u16 value,
   _u16 index = 0;
 
   for (_u16 i = 0; i < times; i++) {
-    _spiBuffer[index++] = (value >> 8) & 0xff;
-    _spiBuffer[index++] = value & 0xff;
+    buffer[index++] = (value >> 8) & 0xff;
+    buffer[index++] = value & 0xff;
   }
   gpio_set_level(dc, DC_D);
 
-  return SPITransmit(handle, _spiBuffer, bytesCount);
+  return SPITransmit(handle, buffer, bytesCount);
 }
