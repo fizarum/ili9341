@@ -268,14 +268,14 @@ void Ili9341Scroll(ILI9341_t *dev, _u16 vsp) {
 }
 
 void Ili9341DrawPixel(ILI9341_t *dev, _u16 x, _u16 y, _u16 color) {
-  Ili9341DrawPixels(dev, x, x, y, y, color);
+  Ili9341DrawPixelTimes(dev, x, x, y, y, color);
 }
 
 /**
  * @brief Fill display region by provided color
  */
-void Ili9341DrawPixels(ILI9341_t *dev, _u16 left, _u16 right, _u16 top,
-                       _u16 bottom, _u16 color) {
+void Ili9341DrawPixelTimes(ILI9341_t *dev, _u16 left, _u16 right, _u16 top,
+                           _u16 bottom, _u16 color) {
   xSemaphoreTake(mutex, portMAX_DELAY);
   left += dev->offsetx;
   right += dev->offsetx;
