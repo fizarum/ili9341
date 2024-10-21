@@ -68,10 +68,12 @@ typedef struct {
    */
   _i8 dc;
 
+  _i8 res;
+
   spi_device_handle_t handle;
 } ILI9341_t;
 
-void Ili9341Init(ILI9341_t *dev, _i8 res);
+void Ili9341Init(ILI9341_t *dev);
 
 esp_err_t Ili9341PowerOn(ILI9341_t *dev, bool on);
 

@@ -10,10 +10,11 @@ static SemaphoreHandle_t mutex;
 void Ili9341SelectRegion(_i8 dc, spi_device_handle_t handle, _u16 l, _u16 r,
                          _u16 t, _u16 b);
 
-void Ili9341Init(ILI9341_t *dev, _i8 res) {
+void Ili9341Init(ILI9341_t *dev) {
   mutex = xSemaphoreCreateMutex();
   spi_device_handle_t handle = dev->handle;
   _u16 dc = dev->dc;
+  _i8 res = dev->res;
 
   PinSetAsOutput(dc, 0);
   PinSetAsOutput(res, 0);
