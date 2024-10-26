@@ -5,7 +5,17 @@
 extern "C" {
 #endif
 
+#include <driver/spi_master.h>
+#include <esp_err.h>
+#include <hal/spi_types.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #include "custom_hal_spi.h"
+typedef uint8_t _u8;
+typedef int8_t _i8;
+typedef uint16_t _u16;
 
 #define CASET 0x2A     // set column(x) address
 #define PASET 0x2B     // set Page(y) address
@@ -68,9 +78,19 @@ typedef struct {
    */
   _i8 dc;
 
+  /**
+   * @brief Reset gpio pin
+   */
   _i8 res;
 
-  spi_device_handle_t handle;
+  /** @brief Basic spi command transmit */
+  bool (*transmitCommand)(const _u8 command);
+
+  /** @brief Basic spi data transmit */
+  bool (*transmitData)(const _u8 *data, const size_t length);
+
+  /** @brief transmit byte n times */
+  bool (*transmitDataTimes)(const _u16 value, _u16 times);
 } ILI9341_t;
 
 void Ili9341Init(ILI9341_t *dev);
