@@ -5,14 +5,11 @@
 extern "C" {
 #endif
 
-#include <driver/spi_master.h>
 #include <esp_err.h>
-#include <hal/spi_types.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
-#include "custom_hal_spi.h"
 typedef uint8_t _u8;
 typedef int8_t _i8;
 typedef uint16_t _u16;
