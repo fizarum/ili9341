@@ -1,30 +1,20 @@
 #include "ili9341.h"
 
-#include <driver/gpio.h>
-
+#include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 
 static SemaphoreHandle_t mutex;
+static _u8 buffer[4];
 
-void Ili9341SelectRegion(_i8 dc, spi_device_handle_t handle, _u16 l, _u16 r,
-                         _u16 t, _u16 b);
+void Ili9341SelectRegion(ILI9341_t *dev, _u16 l, _u16 r, _u16 t, _u16 b);
+static bool Uint16_ToByteArray(_u16 data);
+static bool Uint32_ToByteArray(_u16 first, _u16 second);
 
 void Ili9341Init(ILI9341_t *dev) {
   mutex = xSemaphoreCreateMutex();
-  spi_device_handle_t handle = dev->handle;
-  _u16 dc = dev->dc;
-  _i8 res = dev->res;
 
-  PinSetAsOutput(dc, 0);
-  PinSetAsOutput(res, 0);
-  if (res >= 0) {
-    // vTaskDelay(pdMS_TO_TICKS(20));
-    vTaskDelay(pdMS_TO_TICKS(1));
-    gpio_set_level(res, 1);
-  }
-
-  SPITransmitCommand(dc, handle, POWER_CTRL1);
+  dev->transmitCommand(POWER_CTRL1);
   // SPITransmitData(dc, handle, 0x23);
   /**
   0x1F - 4.4V
@@ -32,25 +22,28 @@ void Ili9341Init(ILI9341_t *dev) {
   0x11 - 3.7V
   0x09 - 3.3V
   */
-  SPITransmitData(dc, handle, 0x09);
+  _u8 ctrl1Data[1] = {0x09};
+  dev->transmitData(ctrl1Data, sizeof(ctrl1Data));
 
-  SPITransmitCommand(dc, handle, POWER_CTRL2);
-  // BT[2:0] = 0x03, means VGH = VCI x 6, VGL = - VCI x 3
-  // lowest value and default
-  SPITransmitData(dc, handle, 0x03);
+  dev->transmitCommand(POWER_CTRL2);
+  //  BT[2:0] = 0x03, means VGH = VCI x 6, VGL = - VCI x 3
+  //  lowest value and default
+  _u8 ctrl2Data[1] = {0x03};
+  dev->transmitData(ctrl2Data, sizeof(ctrl2Data));
 
-  SPITransmitCommand(dc, handle, VCOM_CTRL1);
+  dev->transmitCommand(VCOM_CTRL1);
   /**
   VMH: 0x1E = 3.45V
   0x3E = 5.850V
   VML: 0x28 = -1.500V
   */
-  SPITransmitData(dc, handle, 0x1E);
-  SPITransmitData(dc, handle, 0x28);
+  _u8 vcomCtrl1[2] = {0x1E, 0x28};
+  dev->transmitData(vcomCtrl1, sizeof(vcomCtrl1));
 
-  SPITransmitCommand(dc, handle, VCOM_CTRL2);
+  dev->transmitCommand(VCOM_CTRL2);
   // VCOMH/VCOML voltage adjustment
-  SPITransmitData(dc, handle, 0x86);
+  _u8 vcomCtrl2[1] = {0x86};
+  dev->transmitData(vcomCtrl2, sizeof(vcomCtrl2));
 
   // just give some time to apply some changes, when mcu has high
   // clock speed (240 MHz, for example) this part works incorrectly
@@ -59,15 +52,14 @@ void Ili9341Init(ILI9341_t *dev) {
 
   Ili9341Rotate(dev, Angle270);
 
-  SPITransmitCommand(dc, handle, PIXSET);
+  dev->transmitCommand(PIXSET);
   // 65K color: 16-bit/pixel
-  SPITransmitData(dc, handle, 0x55);
+  _u8 pixSet[1] = {0x55};
+  dev->transmitData(pixSet, sizeof(pixSet));
 
   Ili9341SetInversion(dev, false);
   // lcdInversionOff(dev);
 
-  SPITransmitCommand(dc, handle, FRMCTR1);
-  SPITransmitData(dc, handle, 0x00);
   /**
   Frame Rate:
   0x1B = 70 Hz
@@ -75,44 +67,38 @@ void Ili9341Init(ILI9341_t *dev) {
   0x15 = 90 Hz
   0x13 = 100 Hz
   */
-  SPITransmitData(dc, handle, 0x13);
+  dev->transmitCommand(FRMCTR1);
+  _u8 frmCtrl1[2] = {0x00, 0x13};
+  dev->transmitData(frmCtrl1, sizeof(frmCtrl1));
 
-  SPITransmitCommand(dc, handle, DISCTRL);
   /**
-  PT = 0x02: Determine source/VCOM output in a non-display area in the partial
-  display mode.
+   REV:1 - liqud crystal normally white
+   GS:0 SS:1 SM:0
+   SS:1, means S720 -> S1 (because of rotated display)
+   ISC = 0x01 - scan cycle 3 frames (51 ms)
+   PT = 0x02: Determine source/VCOM output in a non-display area in the partial
+      display mode.
+   PTG = 0x02: interval scan
+   */
+  _u8 disCtrl[4] = {0x0A, 0xA1, 0x27, 0x00};
+  dev->transmitCommand(DISCTRL);
+  dev->transmitData(disCtrl, sizeof(disCtrl));
 
-  PTG = 0x02: interval scan
-  */
-  SPITransmitData(dc, handle, 0x0A);
-  /**
-  REV:1 - liqud crystal normally white
-  GS:0 SS:1 SM:0
-  SS:1, means S720 -> S1 (because of rotated display)
-  ISC = 0x01 - scan cycle 3 frames (51 ms)
-  */
-  SPITransmitData(dc, handle, 0xA1);
-  // NL - 320 lines
-  SPITransmitData(dc, handle, 0x27);
-  SPITransmitData(dc, handle, 0x00);
-
-  SPITransmitCommand(dc, handle, PGAMCTRL);
-  _u8 pgc[] = {
+  dev->transmitCommand(PGAMCTRL);
+  _u8 pgc[15] = {
       0x1F, 0x1A, 0x18, 0x0A, 0x0F, 0x06, 0x45, 0x87,
       0x32, 0x0A, 0x07, 0x02, 0x07, 0x05, 0x00,
   };
+  dev->transmitData(pgc, sizeof(pgc));
 
-  SPITransmitDataArray(dc, handle, pgc, sizeof(pgc));
-
-  SPITransmitCommand(dc, handle, NGAMCTRL);
-  _u8 ngc[] = {
+  dev->transmitCommand(NGAMCTRL);
+  _u8 ngc[15] = {
       0x00, 0x25, 0x27, 0x05, 0x10, 0x09, 0x3A, 0x78,
       0x4D, 0x05, 0x18, 0x0D, 0x38, 0x3A, 0x1F,
   };
+  dev->transmitData(ngc, sizeof(ngc));
 
-  SPITransmitDataArray(dc, handle, ngc, sizeof(ngc));
-
-  SPITransmitCommand(dc, handle, SLPOUT);
+  dev->transmitCommand(SLPOUT);
   /**
    * During the Resetting period, the display will be blanked
    * (The display is entering blanking sequence, which maximum time
@@ -126,11 +112,10 @@ void Ili9341Init(ILI9341_t *dev) {
 esp_err_t Ili9341PowerOn(ILI9341_t *dev, bool on) {
   xSemaphoreTake(mutex, portMAX_DELAY);
 
-  esp_err_t result =
-      SPITransmitCommand(dev->dc, dev->handle, on == true ? DISPON : DISPOFF);
+  bool result = dev->transmitCommand(on == true ? DISPON : DISPOFF);
 
   xSemaphoreGive(mutex);
-  return result;
+  return result == true ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation) {
@@ -147,7 +132,7 @@ esp_err_t Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation) {
       (dev->rotation == Angle0) || (dev->rotation == Angle180);
   bool isNewModePortait = (rotation == Angle0) || (rotation == Angle180);
 
-  SPITransmitCommand(dev->dc, dev->handle, MADCTL);
+  dev->transmitCommand(MADCTL);
 
   switch (rotation) {
     case Angle90: {
@@ -189,33 +174,33 @@ esp_err_t Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation) {
     dev->offsety = temp;
   }
   dev->rotation = rotation;
-  esp_err_t result =
-      SPITransmitData(dev->dc, dev->handle, mx | my | mv | (dev->colorMode));
+
+  _u8 rotData[1] = {mx | my | mv | (dev->colorMode)};
+  bool result = dev->transmitData(rotData, sizeof(rotData));
 
   xSemaphoreGive(mutex);
 
-  return result;
+  return result ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t Ili9341SetInversion(ILI9341_t *dev, const bool inversionOn) {
   xSemaphoreTake(mutex, portMAX_DELAY);
-
-  esp_err_t result = SPITransmitCommand(dev->dc, dev->handle,
-                                        inversionOn == true ? DINVON : DINVOFF);
+  bool result = dev->transmitCommand(inversionOn == true ? DINVON : DINVOFF);
 
   xSemaphoreGive(mutex);
-  return result;
+  return result ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t Ili9341SetColorMode(ILI9341_t *dev, const ColorMode_t mode) {
   xSemaphoreTake(mutex, portMAX_DELAY);
 
   dev->colorMode = mode;
-  SPITransmitCommand(dev->dc, dev->handle, MADCTL);
-  esp_err_t result = SPITransmitData(dev->dc, dev->handle, mode);
+  dev->transmitCommand(MADCTL);
+  _u8 modeData[1] = {mode};
+  bool result = dev->transmitData(modeData, sizeof(modeData));
 
   xSemaphoreGive(mutex);
-  return result;
+  return result ? ESP_OK : ESP_FAIL;
 }
 
 /**
@@ -233,10 +218,16 @@ esp_err_t Ili9341SetColorMode(ILI9341_t *dev, const ColorMode_t mode) {
 void Ili9341SetScrollArea(ILI9341_t *dev, _u16 tfa, _u16 vsa, _u16 bfa) {
   xSemaphoreTake(mutex, portMAX_DELAY);
 
-  SPITransmitCommand(dev->dc, dev->handle, VSCRDEF);
-  SPITransmitDataWord(dev->dc, dev->handle, tfa);
-  SPITransmitDataWord(dev->dc, dev->handle, vsa);
-  SPITransmitDataWord(dev->dc, dev->handle, bfa);
+  dev->transmitCommand(VSCRDEF);
+
+  Uint16_ToByteArray(tfa);
+  dev->transmitData(buffer, 2);
+
+  Uint16_ToByteArray(vsa);
+  dev->transmitData(buffer, 2);
+
+  Uint16_ToByteArray(bfa);
+  dev->transmitData(buffer, 2);
 
   xSemaphoreGive(mutex);
 }
@@ -244,10 +235,16 @@ void Ili9341SetScrollArea(ILI9341_t *dev, _u16 tfa, _u16 vsa, _u16 bfa) {
 void Ili9341ResetScrollArea(ILI9341_t *dev, _u16 vsa) {
   xSemaphoreTake(mutex, portMAX_DELAY);
 
-  SPITransmitCommand(dev->dc, dev->handle, VSCRDEF);
-  SPITransmitDataWord(dev->dc, dev->handle, 0);
-  SPITransmitDataWord(dev->dc, dev->handle, vsa);
-  SPITransmitDataWord(dev->dc, dev->handle, 0);
+  dev->transmitCommand(VSCRDEF);
+
+  Uint16_ToByteArray(0);
+  dev->transmitData(buffer, 2);
+
+  Uint16_ToByteArray(vsa);
+  dev->transmitData(buffer, 2);
+
+  Uint16_ToByteArray(0);
+  dev->transmitData(buffer, 2);
 
   xSemaphoreGive(mutex);
 }
@@ -261,9 +258,10 @@ void Ili9341ResetScrollArea(ILI9341_t *dev, _u16 vsa) {
  */
 void Ili9341Scroll(ILI9341_t *dev, _u16 vsp) {
   xSemaphoreTake(mutex, portMAX_DELAY);
+  dev->transmitCommand(VSCRSADD);
 
-  SPITransmitCommand(dev->dc, dev->handle, VSCRSADD);
-  SPITransmitDataWord(dev->dc, dev->handle, vsp);
+  Uint16_ToByteArray(vsp);
+  dev->transmitData(buffer, 2);
 
   xSemaphoreGive(mutex);
 }
@@ -294,15 +292,13 @@ void Ili9341DrawPixelTimes(ILI9341_t *dev, _u16 left, _u16 right, _u16 top,
     bottom = dev->height - 1;
   }
 
-  int16_t dc = dev->dc;
-  spi_device_handle_t handle = dev->handle;
-
-  Ili9341SelectRegion(dc, handle, left, right, top, bottom);
-  SPITransmitCommand(dc, handle, RAMWR);
+  Ili9341SelectRegion(dev, left, right, top, bottom);
+  dev->transmitCommand(RAMWR);
 
   // case of drawing one pixel - optimized part
   if (left == right && top == bottom) {
-    SPITransmitDataWord(dc, handle, color);
+    Uint16_ToByteArray(color);
+    dev->transmitData(buffer, 2);
     xSemaphoreGive(mutex);
     return;
   }
@@ -310,16 +306,33 @@ void Ili9341DrawPixelTimes(ILI9341_t *dev, _u16 left, _u16 right, _u16 top,
   _u16 pixelsCountToFill = bottom - top + 1;
 
   for (_u16 x = left; x <= right; x++) {
-    SPITransmitDataTimes(dc, handle, color, pixelsCountToFill);
+    dev->transmitDataTimes(color, pixelsCountToFill);
   }
   xSemaphoreGive(mutex);
 }
 
-void Ili9341SelectRegion(_i8 dc, spi_device_handle_t handle, _u16 l, _u16 r,
-                         _u16 t, _u16 b) {
-  SPITransmitCommand(dc, handle, CASET);
-  SPITransmitDataDWord(dc, handle, l, r);
+void Ili9341SelectRegion(ILI9341_t *dev, _u16 l, _u16 r, _u16 t, _u16 b) {
+  dev->transmitCommand(CASET);
+  Uint32_ToByteArray(l, r);
+  dev->transmitData(buffer, sizeof(buffer));
 
-  SPITransmitCommand(dc, handle, PASET);
-  SPITransmitDataDWord(dc, handle, t, b);
+  dev->transmitCommand(PASET);
+  Uint32_ToByteArray(t, b);
+  dev->transmitData(buffer, sizeof(buffer));
+}
+
+static bool Uint16_ToByteArray(_u16 data) {
+  buffer[0] = (data >> 8) & 0xff;
+  buffer[1] = data & 0xff;
+
+  return true;
+}
+
+static bool Uint32_ToByteArray(_u16 first, _u16 second) {
+  buffer[0] = (first >> 8) & 0xff;
+  buffer[1] = first & 0xff;
+  buffer[2] = (second >> 8) & 0xff;
+  buffer[3] = second & 0xff;
+
+  return true;
 }

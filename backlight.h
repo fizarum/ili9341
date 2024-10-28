@@ -8,7 +8,7 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
-bool BacklightSetValue(int8_t gpioPin, uint8_t percents);
+bool Backlight_SetValue(int8_t gpioPin, uint8_t percents);
 
 #ifdef __cplusplus
 }

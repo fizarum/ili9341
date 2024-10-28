@@ -43,7 +43,7 @@ static ledc_channel_config_t ledcChannel = {
  * @param dev
  * @param level [0..100] when set to 0 backlight if off
  */
-bool BacklightSetValue(int8_t gpioPin, uint8_t percents) {
+bool Backlight_SetValue(int8_t gpioPin, uint8_t percents) {
   if (gpioPin < 0) {
     return false;
   }
