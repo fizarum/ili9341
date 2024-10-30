@@ -11,6 +11,7 @@
 #define GFX_IS_BIT_SET8(source, position) (source & (0x80 >> position))
 
 static Font_t *activeFont = NULL;
+static _u16 backgroundColor;
 static GFX_Callback drawCallback;
 static _u16 canvasWidth = 0;
 static _u16 canvasHeight = 0;
@@ -23,6 +24,7 @@ void GFXInit(const _u16 width, const _u16 height, GFX_Callback callback) {
 }
 
 void GFXSetFont(Font_t *font) { activeFont = font; }
+void GFX_SetBackground(_u16 color) { backgroundColor = color; }
 
 void GFXDrawSymbol(SymbolData_t *symbol, _u16 xPos, _u16 yPos) {
   if (activeFont == NULL) return;
@@ -104,3 +106,5 @@ _u16 GFXGetFontColor() {
 
   return activeFont->color;
 }
+
+_u16 GFX_GetBackgroundColor() { return backgroundColor; }
