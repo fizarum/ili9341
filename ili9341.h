@@ -80,6 +80,11 @@ typedef struct {
    */
   _i8 res;
 
+  /**
+   * @brief Backlight gpio pin
+   */
+  _i8 bl;
+
   /** @brief Basic spi command transmit */
   bool (*transmitCommand)(const _u8 command);
 
@@ -88,6 +93,8 @@ typedef struct {
 
   /** @brief transmit byte n times */
   bool (*transmitDataTimes)(const _u16 value, _u16 times);
+
+  bool (*lighten)(const _u8 percents);
 } ILI9341_t;
 
 void Ili9341Init(ILI9341_t *dev);
