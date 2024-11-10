@@ -7,7 +7,7 @@ extern "C" {
 
 #include <stddef.h>
 
-#include "../font/font.h"
+#include "symbol_data.h"
 
 // #
 _u8 symbNumData[] = {0x0A, 0x1F, 0x0A, 0x1F, 0x0A};
