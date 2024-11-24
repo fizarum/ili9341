@@ -57,8 +57,7 @@ void Ili9341Init(ILI9341_t *dev) {
   _u8 pixSet[1] = {0x55};
   dev->transmitData(pixSet, sizeof(pixSet));
 
-  Ili9341SetInversion(dev, false);
-  // lcdInversionOff(dev);
+  Ili9341SetInversion(dev, true);
 
   /**
   Frame Rate:
@@ -68,7 +67,7 @@ void Ili9341Init(ILI9341_t *dev) {
   0x13 = 100 Hz
   */
   dev->transmitCommand(FRMCTR1);
-  _u8 frmCtrl1[2] = {0x00, 0x13};
+  _u8 frmCtrl1[2] = {0x00, 0x1B};
   dev->transmitData(frmCtrl1, sizeof(frmCtrl1));
 
   /**
