@@ -5,7 +5,6 @@
 extern "C" {
 #endif
 
-#include <esp_err.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -99,11 +98,11 @@ typedef struct {
 
 void Ili9341Init(ILI9341_t *dev);
 
-esp_err_t Ili9341PowerOn(ILI9341_t *dev, bool on);
+bool Ili9341PowerOn(ILI9341_t *dev, bool on);
 
-esp_err_t Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation);
-esp_err_t Ili9341SetInversion(ILI9341_t *dev, const bool inversionOn);
-esp_err_t Ili9341SetColorMode(ILI9341_t *dev, const ColorMode_t mode);
+bool Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation);
+bool Ili9341SetInversion(ILI9341_t *dev, const bool inversionOn);
+bool Ili9341SetColorMode(ILI9341_t *dev, const ColorMode_t mode);
 void Ili9341SetScrollArea(ILI9341_t *dev, _u16 tfa, _u16 vsa, _u16 bfa);
 void Ili9341ResetScrollArea(ILI9341_t *dev, _u16 vsa);
 void Ili9341Scroll(ILI9341_t *dev, _u16 vsp);
