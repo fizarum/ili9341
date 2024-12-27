@@ -108,21 +108,21 @@ void Ili9341Init(ILI9341_t *dev) {
   vTaskDelay(pdMS_TO_TICKS(121));
 }
 
-esp_err_t Ili9341PowerOn(ILI9341_t *dev, bool on) {
+bool Ili9341PowerOn(ILI9341_t *dev, bool on) {
   xSemaphoreTake(mutex, portMAX_DELAY);
 
   bool result = dev->transmitCommand(on == true ? DISPON : DISPOFF);
 
   xSemaphoreGive(mutex);
-  return result == true ? ESP_OK : ESP_FAIL;
+  return result;
 }
 
-esp_err_t Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation) {
+bool Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation) {
   xSemaphoreTake(mutex, portMAX_DELAY);
 
   if (dev->rotation == rotation) {
     xSemaphoreGive(mutex);
-    return ESP_OK;
+    return true;
   }
 
   _u8 mx, my, mv = 0x00;
@@ -179,18 +179,18 @@ esp_err_t Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation) {
 
   xSemaphoreGive(mutex);
 
-  return result ? ESP_OK : ESP_FAIL;
+  return result;
 }
 
-esp_err_t Ili9341SetInversion(ILI9341_t *dev, const bool inversionOn) {
+bool Ili9341SetInversion(ILI9341_t *dev, const bool inversionOn) {
   xSemaphoreTake(mutex, portMAX_DELAY);
   bool result = dev->transmitCommand(inversionOn == true ? DINVON : DINVOFF);
 
   xSemaphoreGive(mutex);
-  return result ? ESP_OK : ESP_FAIL;
+  return result;
 }
 
-esp_err_t Ili9341SetColorMode(ILI9341_t *dev, const ColorMode_t mode) {
+bool Ili9341SetColorMode(ILI9341_t *dev, const ColorMode_t mode) {
   xSemaphoreTake(mutex, portMAX_DELAY);
 
   dev->colorMode = mode;
@@ -199,7 +199,7 @@ esp_err_t Ili9341SetColorMode(ILI9341_t *dev, const ColorMode_t mode) {
   bool result = dev->transmitData(modeData, sizeof(modeData));
 
   xSemaphoreGive(mutex);
-  return result ? ESP_OK : ESP_FAIL;
+  return result;
 }
 
 /**
