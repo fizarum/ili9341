@@ -5,11 +5,13 @@
 #include "freertos/task.h"
 
 static SemaphoreHandle_t mutex;
-static _u8 buffer[4];
+#define BUFFER_SIZE 1024
+static _u8 buffer[BUFFER_SIZE];
 
 void Ili9341SelectRegion(ILI9341_t *dev, _u16 l, _u16 r, _u16 t, _u16 b);
-static bool Uint16_ToByteArray(_u16 data);
-static bool Uint32_ToByteArray(_u16 first, _u16 second);
+static void Uint16_ToByteArray(_u16 data);
+static void Uint32_ToByteArray(_u16 first, _u16 second);
+static void Uint16Array_ToByteArray(_u16 *array, size_t arraySize);
 
 void Ili9341Init(ILI9341_t *dev) {
   mutex = xSemaphoreCreateMutex();
@@ -265,16 +267,16 @@ void Ili9341Scroll(ILI9341_t *dev, _u16 vsp) {
   xSemaphoreGive(mutex);
 }
 
-void Ili9341DrawPixel(ILI9341_t *dev, _u16 x, _u16 y, _u16 color) {
-  Ili9341DrawPixelTimes(dev, x, x, y, y, color);
+void Ili9341DrawPixel(ILI9341_t *dev, _u16 left, _u16 top, _u16 color) {
+  Ili9341DrawPixelTimes(dev, left, left, top, top, color);
 }
 
-/**
- * @brief Fill display region by provided color
- */
-void Ili9341DrawPixelTimes(ILI9341_t *dev, _u16 left, _u16 right, _u16 top,
-                           _u16 bottom, _u16 color) {
-  xSemaphoreTake(mutex, portMAX_DELAY);
+void Ili9341DrawPixels(ILI9341_t *dev, _u16 left, _u16 top, _u16 right,
+                       _u16 bottom, _u16 *colors, size_t colorsSize) {
+  if (colorsSize >= BUFFER_SIZE / 2) {
+    return;
+  }
+
   left += dev->offsetx;
   right += dev->offsetx;
   top += dev->offsety;
@@ -290,6 +292,38 @@ void Ili9341DrawPixelTimes(ILI9341_t *dev, _u16 left, _u16 right, _u16 top,
   if (bottom >= dev->height) {
     bottom = dev->height - 1;
   }
+
+  xSemaphoreTake(mutex, portMAX_DELAY);
+  Ili9341SelectRegion(dev, left, right, top, bottom);
+  dev->transmitCommand(RAMWR);
+
+  Uint16Array_ToByteArray(colors, colorsSize);
+  dev->transmitData(buffer, colorsSize * 2);
+  xSemaphoreGive(mutex);
+}
+
+/**
+ * @brief Fill display region by provided color
+ */
+void Ili9341DrawPixelTimes(ILI9341_t *dev, _u16 left, _u16 right, _u16 top,
+                           _u16 bottom, _u16 color) {
+  left += dev->offsetx;
+  right += dev->offsetx;
+  top += dev->offsety;
+  bottom += dev->offsety;
+
+  if (left >= dev->width) return;
+  if (top >= dev->height) return;
+
+  if (right >= dev->width) {
+    right = dev->width - 1;
+  }
+
+  if (bottom >= dev->height) {
+    bottom = dev->height - 1;
+  }
+
+  xSemaphoreTake(mutex, portMAX_DELAY);
 
   Ili9341SelectRegion(dev, left, right, top, bottom);
   dev->transmitCommand(RAMWR);
@@ -313,25 +347,34 @@ void Ili9341DrawPixelTimes(ILI9341_t *dev, _u16 left, _u16 right, _u16 top,
 void Ili9341SelectRegion(ILI9341_t *dev, _u16 l, _u16 r, _u16 t, _u16 b) {
   dev->transmitCommand(CASET);
   Uint32_ToByteArray(l, r);
-  dev->transmitData(buffer, sizeof(buffer));
+  dev->transmitData(buffer, 4);
 
   dev->transmitCommand(PASET);
   Uint32_ToByteArray(t, b);
-  dev->transmitData(buffer, sizeof(buffer));
+  dev->transmitData(buffer, 4);
 }
 
-static bool Uint16_ToByteArray(_u16 data) {
+static void Uint16_ToByteArray(_u16 data) {
   buffer[0] = (data >> 8) & 0xff;
   buffer[1] = data & 0xff;
-
-  return true;
 }
 
-static bool Uint32_ToByteArray(_u16 first, _u16 second) {
+static void Uint16Array_ToByteArray(_u16 *array, size_t arraySize) {
+  _u16 data;
+  size_t outputArrayIndex = 0;
+  for (size_t index = 0; index < arraySize; index++) {
+    data = array[index];
+
+    buffer[outputArrayIndex] = ((data >> 8) & 0xff);
+    outputArrayIndex++;
+    buffer[outputArrayIndex] = (data & 0xff);
+    outputArrayIndex++;
+  }
+}
+
+static void Uint32_ToByteArray(_u16 first, _u16 second) {
   buffer[0] = (first >> 8) & 0xff;
   buffer[1] = first & 0xff;
   buffer[2] = (second >> 8) & 0xff;
   buffer[3] = second & 0xff;
-
-  return true;
 }
