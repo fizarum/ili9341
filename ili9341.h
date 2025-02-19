@@ -12,6 +12,7 @@ extern "C" {
 typedef uint8_t _u8;
 typedef int8_t _i8;
 typedef uint16_t _u16;
+typedef uint32_t _u32;
 
 #define CASET 0x2A     // set column(x) address
 #define PASET 0x2B     // set Page(y) address
@@ -107,7 +108,9 @@ void Ili9341SetScrollArea(ILI9341_t *dev, _u16 tfa, _u16 vsa, _u16 bfa);
 void Ili9341ResetScrollArea(ILI9341_t *dev, _u16 vsa);
 void Ili9341Scroll(ILI9341_t *dev, _u16 vsp);
 
-void Ili9341DrawPixel(ILI9341_t *dev, _u16 x, _u16 y, _u16 color);
+void Ili9341DrawPixel(ILI9341_t *dev, _u16 left, _u16 top, _u16 color);
+void Ili9341DrawPixels(ILI9341_t *dev, _u16 left, _u16 top, _u16 right,
+                       _u16 bottom, _u16 *colors, size_t colorsSize);
 void Ili9341DrawPixelTimes(ILI9341_t *dev, _u16 left, _u16 right, _u16 top,
                            _u16 bottom, _u16 color);
 #ifdef __cplusplus
