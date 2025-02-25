@@ -111,7 +111,7 @@ void Ili9341Scroll(ILI9341_t *dev, _u16 vsp);
 void Ili9341DrawPixel(ILI9341_t *dev, _u16 left, _u16 top, _u16 color);
 void Ili9341DrawPixels(ILI9341_t *dev, _u16 left, _u16 top, _u16 right,
                        _u16 bottom, _u16 *colors, size_t colorsSize);
-void Ili9341DrawPixelTimes(ILI9341_t *dev, _u16 left, _u16 right, _u16 top,
+void Ili9341DrawPixelTimes(ILI9341_t *dev, _u16 left, _u16 top, _u16 right,
                            _u16 bottom, _u16 color);
 #ifdef __cplusplus
 }
