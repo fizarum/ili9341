@@ -7,6 +7,7 @@
 static SemaphoreHandle_t mutex;
 #define BUFFER_SIZE 1024
 static _u8 buffer[BUFFER_SIZE];
+static TickType_t _2 = pdTICKS_TO_MS(2);
 
 void Ili9341SelectRegion(ILI9341_t *dev, _u16 l, _u16 r, _u16 t, _u16 b);
 static void Uint16_ToByteArray(_u16 data);
@@ -217,7 +218,7 @@ bool Ili9341SetColorMode(ILI9341_t *dev, const ColorMode_t mode) {
  * Memory and Display). TFA, VSA and BFA refer to the Frame Memory Line Pointer.
  */
 void Ili9341SetScrollArea(ILI9341_t *dev, _u16 tfa, _u16 vsa, _u16 bfa) {
-  xSemaphoreTake(mutex, portMAX_DELAY);
+  xSemaphoreTake(mutex, _2);
 
   dev->transmitCommand(VSCRDEF);
 
@@ -234,7 +235,7 @@ void Ili9341SetScrollArea(ILI9341_t *dev, _u16 tfa, _u16 vsa, _u16 bfa) {
 }
 
 void Ili9341ResetScrollArea(ILI9341_t *dev, _u16 vsa) {
-  xSemaphoreTake(mutex, portMAX_DELAY);
+  xSemaphoreTake(mutex, _2);
 
   dev->transmitCommand(VSCRDEF);
 
@@ -258,7 +259,7 @@ void Ili9341ResetScrollArea(ILI9341_t *dev, _u16 vsa) {
  * the last line of the Top Fixed Area on the display
  */
 void Ili9341Scroll(ILI9341_t *dev, _u16 vsp) {
-  xSemaphoreTake(mutex, portMAX_DELAY);
+  xSemaphoreTake(mutex, _2);
   dev->transmitCommand(VSCRSADD);
 
   Uint16_ToByteArray(vsp);
@@ -293,7 +294,7 @@ void Ili9341DrawPixels(ILI9341_t *dev, _u16 left, _u16 top, _u16 right,
     bottom = dev->height - 1;
   }
 
-  xSemaphoreTake(mutex, portMAX_DELAY);
+  xSemaphoreTake(mutex, _2);
   Ili9341SelectRegion(dev, left, right, top, bottom);
   dev->transmitCommand(RAMWR);
 
@@ -323,7 +324,7 @@ void Ili9341DrawPixelTimes(ILI9341_t *dev, _u16 left, _u16 top, _u16 right,
     bottom = dev->height - 1;
   }
 
-  xSemaphoreTake(mutex, portMAX_DELAY);
+  xSemaphoreTake(mutex, _2);
 
   Ili9341SelectRegion(dev, left, right, top, bottom);
   dev->transmitCommand(RAMWR);
