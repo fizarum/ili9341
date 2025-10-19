@@ -48,8 +48,6 @@ You also can check example from esp-idf team [here](https://github.com/espressif
 ILI9341_t dev = {
     .width = DISPLAY_WIDTH,
     .height = DISPLAY_HEIGHT,
-    .offsetx = CONFIG_OFFSETX,
-    .offsety = CONFIG_OFFSETY,
     .rotation = Angle0,
     .fontRotaion = Angle0,
     .colorMode = ModeBGR,
