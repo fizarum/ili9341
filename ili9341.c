@@ -9,12 +9,12 @@ static SemaphoreHandle_t mutex;
 static _u8 buffer[BUFFER_SIZE];
 static TickType_t _2 = pdTICKS_TO_MS(2);
 
-void Ili9341SelectRegion(ILI9341_t *dev, _u16 l, _u16 r, _u16 t, _u16 b);
+void Ili9341SelectRegion(ILI9341_t* dev, _u16 l, _u16 r, _u16 t, _u16 b);
 static void Uint16_ToByteArray(_u16 data);
 static void Uint32_ToByteArray(_u16 first, _u16 second);
-static void Uint16Array_ToByteArray(_u16 *array, size_t arraySize);
+static void Uint16Array_ToByteArray(_u16* array, size_t arraySize);
 
-void Ili9341Init(ILI9341_t *dev) {
+void Ili9341Init(ILI9341_t* dev) {
   mutex = xSemaphoreCreateMutex();
 
   dev->transmitCommand(POWER_CTRL1);
@@ -111,7 +111,7 @@ void Ili9341Init(ILI9341_t *dev) {
   vTaskDelay(pdMS_TO_TICKS(121));
 }
 
-bool Ili9341PowerOn(ILI9341_t *dev, bool on) {
+bool Ili9341PowerOn(ILI9341_t* dev, bool on) {
   xSemaphoreTake(mutex, portMAX_DELAY);
 
   bool result = dev->transmitCommand(on == true ? DISPON : DISPOFF);
@@ -120,7 +120,7 @@ bool Ili9341PowerOn(ILI9341_t *dev, bool on) {
   return result;
 }
 
-bool Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation) {
+bool Ili9341Rotate(ILI9341_t* dev, const Rotation_t rotation) {
   xSemaphoreTake(mutex, portMAX_DELAY);
 
   if (dev->rotation == rotation) {
@@ -170,10 +170,6 @@ bool Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation) {
     _u16 temp = dev->width;
     dev->width = dev->height;
     dev->height = temp;
-
-    temp = dev->offsetx;
-    dev->offsetx = dev->offsety;
-    dev->offsety = temp;
   }
   dev->rotation = rotation;
 
@@ -185,7 +181,7 @@ bool Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation) {
   return result;
 }
 
-bool Ili9341SetInversion(ILI9341_t *dev, const bool inversionOn) {
+bool Ili9341SetInversion(ILI9341_t* dev, const bool inversionOn) {
   xSemaphoreTake(mutex, portMAX_DELAY);
   bool result = dev->transmitCommand(inversionOn == true ? DINVON : DINVOFF);
 
@@ -193,7 +189,7 @@ bool Ili9341SetInversion(ILI9341_t *dev, const bool inversionOn) {
   return result;
 }
 
-bool Ili9341SetColorMode(ILI9341_t *dev, const ColorMode_t mode) {
+bool Ili9341SetColorMode(ILI9341_t* dev, const ColorMode_t mode) {
   xSemaphoreTake(mutex, portMAX_DELAY);
 
   dev->colorMode = mode;
@@ -217,7 +213,7 @@ bool Ili9341SetColorMode(ILI9341_t *dev, const ColorMode_t mode) {
  * @param bfa Bottom Fixed Area (in No. of lines from Bottom of the Frame
  * Memory and Display). TFA, VSA and BFA refer to the Frame Memory Line Pointer.
  */
-void Ili9341SetScrollArea(ILI9341_t *dev, _u16 tfa, _u16 vsa, _u16 bfa) {
+void Ili9341SetScrollArea(ILI9341_t* dev, _u16 tfa, _u16 vsa, _u16 bfa) {
   xSemaphoreTake(mutex, _2);
 
   dev->transmitCommand(VSCRDEF);
@@ -234,7 +230,7 @@ void Ili9341SetScrollArea(ILI9341_t *dev, _u16 tfa, _u16 vsa, _u16 bfa) {
   xSemaphoreGive(mutex);
 }
 
-void Ili9341ResetScrollArea(ILI9341_t *dev, _u16 vsa) {
+void Ili9341ResetScrollArea(ILI9341_t* dev, _u16 vsa) {
   xSemaphoreTake(mutex, _2);
 
   dev->transmitCommand(VSCRDEF);
@@ -258,7 +254,7 @@ void Ili9341ResetScrollArea(ILI9341_t *dev, _u16 vsa) {
  * Frame Memory that will be written as the first line after
  * the last line of the Top Fixed Area on the display
  */
-void Ili9341Scroll(ILI9341_t *dev, _u16 vsp) {
+void Ili9341Scroll(ILI9341_t* dev, _u16 vsp) {
   xSemaphoreTake(mutex, _2);
   dev->transmitCommand(VSCRSADD);
 
@@ -268,20 +264,15 @@ void Ili9341Scroll(ILI9341_t *dev, _u16 vsp) {
   xSemaphoreGive(mutex);
 }
 
-void Ili9341DrawPixel(ILI9341_t *dev, _u16 left, _u16 top, _u16 color) {
+void Ili9341DrawPixel(ILI9341_t* dev, _u16 left, _u16 top, _u16 color) {
   Ili9341DrawPixelTimes(dev, left, top, left, top, color);
 }
 
-void Ili9341DrawPixels(ILI9341_t *dev, _u16 left, _u16 top, _u16 right,
-                       _u16 bottom, _u16 *colors, size_t colorsSize) {
+void Ili9341DrawPixels(ILI9341_t* dev, _u16 left, _u16 top, _u16 right,
+                       _u16 bottom, _u16* colors, size_t colorsSize) {
   if (colorsSize >= BUFFER_SIZE / 2) {
     return;
   }
-
-  left += dev->offsetx;
-  right += dev->offsetx;
-  top += dev->offsety;
-  bottom += dev->offsety;
 
   if (left >= dev->width) return;
   if (top >= dev->height) return;
@@ -306,13 +297,8 @@ void Ili9341DrawPixels(ILI9341_t *dev, _u16 left, _u16 top, _u16 right,
 /**
  * @brief Fill display region by provided color
  */
-void Ili9341DrawPixelTimes(ILI9341_t *dev, _u16 left, _u16 top, _u16 right,
+void Ili9341DrawPixelTimes(ILI9341_t* dev, _u16 left, _u16 top, _u16 right,
                            _u16 bottom, _u16 color) {
-  left += dev->offsetx;
-  right += dev->offsetx;
-  top += dev->offsety;
-  bottom += dev->offsety;
-
   if (left >= dev->width) return;
   if (top >= dev->height) return;
 
@@ -345,7 +331,7 @@ void Ili9341DrawPixelTimes(ILI9341_t *dev, _u16 left, _u16 top, _u16 right,
   xSemaphoreGive(mutex);
 }
 
-void Ili9341SelectRegion(ILI9341_t *dev, _u16 l, _u16 r, _u16 t, _u16 b) {
+void Ili9341SelectRegion(ILI9341_t* dev, _u16 l, _u16 r, _u16 t, _u16 b) {
   dev->transmitCommand(CASET);
   Uint32_ToByteArray(l, r);
   dev->transmitData(buffer, 4);
@@ -360,7 +346,7 @@ static void Uint16_ToByteArray(_u16 data) {
   buffer[1] = data & 0xff;
 }
 
-static void Uint16Array_ToByteArray(_u16 *array, size_t arraySize) {
+static void Uint16Array_ToByteArray(_u16* array, size_t arraySize) {
   _u16 data;
   size_t outputArrayIndex = 0;
   for (size_t index = 0; index < arraySize; index++) {

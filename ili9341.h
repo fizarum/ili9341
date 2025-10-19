@@ -51,8 +51,6 @@ typedef enum {
 typedef struct {
   _u16 width;
   _u16 height;
-  _u16 offsetx;
-  _u16 offsety;
 
   /**
    * @brief scren rotation, counting from default (0)
@@ -89,7 +87,7 @@ typedef struct {
   bool (*transmitCommand)(const _u8 command);
 
   /** @brief Basic spi data transmit */
-  bool (*transmitData)(const _u8 *data, const size_t length);
+  bool (*transmitData)(const _u8* data, const size_t length);
 
   /** @brief transmit byte n times */
   bool (*transmitDataTimes)(const _u16 value, _u16 times);
@@ -97,21 +95,21 @@ typedef struct {
   bool (*lighten)(const _u8 percents);
 } ILI9341_t;
 
-void Ili9341Init(ILI9341_t *dev);
+void Ili9341Init(ILI9341_t* dev);
 
-bool Ili9341PowerOn(ILI9341_t *dev, bool on);
+bool Ili9341PowerOn(ILI9341_t* dev, bool on);
 
-bool Ili9341Rotate(ILI9341_t *dev, const Rotation_t rotation);
-bool Ili9341SetInversion(ILI9341_t *dev, const bool inversionOn);
-bool Ili9341SetColorMode(ILI9341_t *dev, const ColorMode_t mode);
-void Ili9341SetScrollArea(ILI9341_t *dev, _u16 tfa, _u16 vsa, _u16 bfa);
-void Ili9341ResetScrollArea(ILI9341_t *dev, _u16 vsa);
-void Ili9341Scroll(ILI9341_t *dev, _u16 vsp);
+bool Ili9341Rotate(ILI9341_t* dev, const Rotation_t rotation);
+bool Ili9341SetInversion(ILI9341_t* dev, const bool inversionOn);
+bool Ili9341SetColorMode(ILI9341_t* dev, const ColorMode_t mode);
+void Ili9341SetScrollArea(ILI9341_t* dev, _u16 tfa, _u16 vsa, _u16 bfa);
+void Ili9341ResetScrollArea(ILI9341_t* dev, _u16 vsa);
+void Ili9341Scroll(ILI9341_t* dev, _u16 vsp);
 
-void Ili9341DrawPixel(ILI9341_t *dev, _u16 left, _u16 top, _u16 color);
-void Ili9341DrawPixels(ILI9341_t *dev, _u16 left, _u16 top, _u16 right,
-                       _u16 bottom, _u16 *colors, size_t colorsSize);
-void Ili9341DrawPixelTimes(ILI9341_t *dev, _u16 left, _u16 top, _u16 right,
+void Ili9341DrawPixel(ILI9341_t* dev, _u16 left, _u16 top, _u16 color);
+void Ili9341DrawPixels(ILI9341_t* dev, _u16 left, _u16 top, _u16 right,
+                       _u16 bottom, _u16* colors, size_t colorsSize);
+void Ili9341DrawPixelTimes(ILI9341_t* dev, _u16 left, _u16 top, _u16 right,
                            _u16 bottom, _u16 color);
 #ifdef __cplusplus
 }
