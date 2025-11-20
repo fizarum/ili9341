@@ -60,7 +60,7 @@ void Ili9341Init(ILI9341_t* dev) {
   _u8 pixSet[1] = {0x55};
   dev->transmitData(pixSet, sizeof(pixSet));
 
-  Ili9341SetInversion(dev, true);
+  // Ili9341SetInversion(dev, false);
 
   /**
   Frame Rate:
