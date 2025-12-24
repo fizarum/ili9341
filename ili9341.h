@@ -1,5 +1,4 @@
-#ifndef ILI9341_H
-#define ILI9341_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -114,5 +113,3 @@ void Ili9341DrawPixelTimes(ILI9341_t* dev, _u16 left, _u16 top, _u16 right,
 #ifdef __cplusplus
 }
 #endif
-
-#endif  // ILI9341_H

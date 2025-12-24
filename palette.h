@@ -1,5 +1,4 @@
-#ifndef PALETTE_H
-#define PALETTE_H
+#pragma once
 
 #define rgb565(r, g, b) (((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3))
 
@@ -14,11 +13,11 @@
 #define COLOR_DARKGREY 0x7BEF        ///< 123, 125, 123 #7b7d7b
 #define COLOR_BLUE 0x001F            ///<   0,   0, 255
 #define COLOR_GREEN 0x07E0           ///<   0, 255,   0
-#define COLOR_CYAN 0x07FF            ///<   0, 255, 255
+#define COLOR_CYAN 0x07FF            ///<   0, 255, 255 #00ffff
 #define COLOR_RED 0xF800             ///< 255,   0,   0
-#define COLOR_MAGENTA 0xF81F         ///< 255,   0, 255
-#define COLOR_YELLOW 0xFFE0          ///< 255, 255,   0
-#define COLOR_WHITE 0xFFFF           ///< 255, 255, 255
+#define COLOR_MAGENTA 0xF81F         ///< 255,   0, 255 #ff00ff
+#define COLOR_YELLOW 0xFFE0          ///< 255, 255,   0 #ffff00
+#define COLOR_WHITE 0xFFFF           ///< 255, 255, 255 #ffffff
 #define COLOR_ORANGE 0xFD20          ///< 255, 165,   0
 #define COLOR_GREENYELLOW 0xAFE5     ///< 173, 255,  41
 #define COLOR_PINK 0xFC18            ///< 255, 130, 198
@@ -42,5 +41,3 @@
 #define COLOR_ASPARAGUS 0x8D4C       ///< 143, 171, 97  #8FAB61
 #define COLOR_SEA_SERPENT 0x3DF9     ///< 59, 192, 211  #3BC0D3
 #define COLOR_GRAY 0xBDD7            ///< 187, 187, 187 #BBBBBB
-
-#endif  // PALETTE_H
