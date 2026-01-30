@@ -20,33 +20,42 @@ void Ili9341Init(ILI9341_t* dev) {
   dev->transmitCommand(POWER_CTRL1);
   // SPITransmitData(dc, handle, 0x23);
   /**
+  0x26 - 4.75V
   0x1F - 4.4V
   0x17 - 4.0V
   0x11 - 3.7V
   0x09 - 3.3V
   */
-  _u8 ctrl1Data[1] = {0x09};
+  _u8 ctrl1Data[1] = {0x26};
   dev->transmitData(ctrl1Data, sizeof(ctrl1Data));
 
   dev->transmitCommand(POWER_CTRL2);
-  //  BT[2:0] = 0x03, means VGH = VCI x 6, VGL = - VCI x 3
   //  lowest value and default
-  _u8 ctrl2Data[1] = {0x03};
+  // AVDD=VCIx2, VGH=VCIx7, VGL=-VCIx3
+  _u8 ctrl2Data[1] = {0x01};
   dev->transmitData(ctrl2Data, sizeof(ctrl2Data));
 
   dev->transmitCommand(VCOM_CTRL1);
   /**
   VMH: 0x1E = 3.45V
+  0x35 = 5.225V
   0x3E = 5.850V
   VML: 0x28 = -1.500V
   */
-  _u8 vcomCtrl1[2] = {0x1E, 0x28};
+  _u8 vcomCtrl1[2] = {0x35, 0x28};
   dev->transmitData(vcomCtrl1, sizeof(vcomCtrl1));
 
   dev->transmitCommand(VCOM_CTRL2);
   // VCOMH/VCOML voltage adjustment
-  _u8 vcomCtrl2[1] = {0x86};
+  // VMH – 2 VML – 2
+  _u8 vcomCtrl2[1] = {0xbe};
   dev->transmitData(vcomCtrl2, sizeof(vcomCtrl2));
+
+  dev->transmitCommand(BCKL_CTRL7);
+  // 0xff - 245Hz
+  // 0x04 - 12.549 KHz
+  _u8 br7[1] = {0x04};
+  dev->transmitData(br7, sizeof(br7));
 
   // just give some time to apply some changes, when mcu has high
   // clock speed (240 MHz, for example) this part works incorrectly
@@ -109,6 +118,7 @@ void Ili9341Init(ILI9341_t* dev) {
    * Check datasheet, page 218, "15.4. Reset Timing"
    */
   vTaskDelay(pdMS_TO_TICKS(121));
+  dev->transmitCommand(DISPON);
 }
 
 bool Ili9341PowerOn(ILI9341_t* dev, bool on) {
@@ -117,6 +127,18 @@ bool Ili9341PowerOn(ILI9341_t* dev, bool on) {
   bool result = dev->transmitCommand(on == true ? DISPON : DISPOFF);
 
   xSemaphoreGive(mutex);
+  return result;
+}
+
+bool ILI9341Sleep(ILI9341_t* dev) {
+  bool result = dev->transmitCommand(SLPIN);
+  vTaskDelay(pdMS_TO_TICKS(130));
+  return result;
+}
+
+bool ILI9341Wakeup(ILI9341_t* dev) {
+  bool result = dev->transmitCommand(SLPOUT);
+  vTaskDelay(pdMS_TO_TICKS(130));
   return result;
 }
 
@@ -268,6 +290,7 @@ void Ili9341DrawPixel(ILI9341_t* dev, _u16 left, _u16 top, _u16 color) {
   Ili9341DrawPixelTimes(dev, left, top, left, top, color);
 }
 
+// TODO: Add 8 bit version
 void Ili9341DrawPixels(ILI9341_t* dev, _u16 left, _u16 top, _u16 right,
                        _u16 bottom, _u16* colors, size_t colorsSize) {
   if (colorsSize >= BUFFER_SIZE / 2) {

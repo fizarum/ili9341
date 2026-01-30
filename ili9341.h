@@ -25,6 +25,7 @@ typedef uint32_t _u32;
 #define GAMSET 0x26    // Gamma Set
 #define PGAMCTRL 0xE0  // Positive Gamma Correction
 #define NGAMCTRL 0xE1  // Negative Gamma Correction
+#define SLPIN 0x10     // Sleep In
 #define SLPOUT 0x11    // Sleep Out
 #define DISPOFF 0x28   // Display OFF
 #define DISPON 0x29    // Display ON
@@ -34,6 +35,9 @@ typedef uint32_t _u32;
 #define POWER_CTRL2 0xC1
 #define VCOM_CTRL1 0xC5
 #define VCOM_CTRL2 0xC7
+
+// Backlight Control 7(PWM_OUT output frequency control.)
+#define BCKL_CTRL7 0xBE
 
 typedef enum {
   Angle0,
@@ -97,6 +101,8 @@ typedef struct {
 void Ili9341Init(ILI9341_t* dev);
 
 bool Ili9341PowerOn(ILI9341_t* dev, bool on);
+bool ILI9341Sleep(ILI9341_t* dev);
+bool ILI9341Wakeup(ILI9341_t* dev);
 
 bool Ili9341Rotate(ILI9341_t* dev, const Rotation_t rotation);
 bool Ili9341SetInversion(ILI9341_t* dev, const bool inversionOn);
