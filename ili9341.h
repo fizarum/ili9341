@@ -40,15 +40,15 @@ typedef uint32_t _u32;
 #define BCKL_CTRL7 0xBE
 
 typedef enum {
-  Angle0,
-  Angle90,
-  Angle180,
-  Angle270,
+  ANGLE_0,
+  ANGLE_90,
+  ANGLE_180,
+  ANGLE_270,
 } Rotation_t;
 
 typedef enum {
-  ModeRGB = 0x00,
-  ModeBGR = 0x08,
+  MODE_RGB = 0x00,
+  MODE_BGR = 0x08,
 } ColorMode_t;
 
 typedef struct {
@@ -63,13 +63,13 @@ typedef struct {
   /**
    * @brief scren rotation, counting from default (0)
    */
-  Rotation_t fontRotaion;
+  Rotation_t font_rotaion;
 
   /**
    * @brief can RGB or BGR.
    * Check datasheet for details: "8.2.29 Memory Access Control (36h)" page 127
    */
-  ColorMode_t colorMode;
+  ColorMode_t color_mode;
 
   /**
    * @brief D/C gpio pin
@@ -87,34 +87,34 @@ typedef struct {
   _i8 bl;
 
   /** @brief Basic spi command transmit */
-  bool (*transmitCommand)(const _u8 command);
+  bool (*transmit_command)(const _u8 command);
 
   /** @brief Basic spi data transmit */
-  bool (*transmitData)(const _u8* data, const size_t length);
+  bool (*transmit_data)(const _u8* data, const size_t length);
 
   /** @brief transmit byte n times */
-  bool (*transmitDataTimes)(const _u16 value, _u16 times);
+  bool (*transmit_data_times)(const _u16 value, _u16 times);
 
   bool (*lighten)(const _u8 percents);
-} ILI9341_t;
+} display_t;
 
-void Ili9341Init(ILI9341_t* dev);
+void Ili9341Init(display_t* dev);
 
-bool Ili9341PowerOn(ILI9341_t* dev, bool on);
-bool ILI9341Sleep(ILI9341_t* dev);
-bool ILI9341Wakeup(ILI9341_t* dev);
+bool Ili9341PowerOn(display_t* dev, bool on);
+bool ILI9341Sleep(display_t* dev);
+bool ILI9341Wakeup(display_t* dev);
 
-bool Ili9341Rotate(ILI9341_t* dev, const Rotation_t rotation);
-bool Ili9341SetInversion(ILI9341_t* dev, const bool inversionOn);
-bool Ili9341SetColorMode(ILI9341_t* dev, const ColorMode_t mode);
-void Ili9341SetScrollArea(ILI9341_t* dev, _u16 tfa, _u16 vsa, _u16 bfa);
-void Ili9341ResetScrollArea(ILI9341_t* dev, _u16 vsa);
-void Ili9341Scroll(ILI9341_t* dev, _u16 vsp);
+bool Ili9341Rotate(display_t* dev, const Rotation_t rotation);
+bool Ili9341SetInversion(display_t* dev, const bool inversionOn);
+bool Ili9341SetColorMode(display_t* dev, const ColorMode_t mode);
+void Ili9341SetScrollArea(display_t* dev, _u16 tfa, _u16 vsa, _u16 bfa);
+void Ili9341ResetScrollArea(display_t* dev, _u16 vsa);
+void Ili9341Scroll(display_t* dev, _u16 vsp);
 
-void Ili9341DrawPixel(ILI9341_t* dev, _u16 left, _u16 top, _u16 color);
-void Ili9341DrawPixels(ILI9341_t* dev, _u16 left, _u16 top, _u16 right,
+void Ili9341DrawPixel(display_t* dev, _u16 left, _u16 top, _u16 color);
+void Ili9341DrawPixels(display_t* dev, _u16 left, _u16 top, _u16 right,
                        _u16 bottom, _u16* colors, size_t colorsSize);
-void Ili9341DrawPixelTimes(ILI9341_t* dev, _u16 left, _u16 top, _u16 right,
+void Ili9341DrawPixelTimes(display_t* dev, _u16 left, _u16 top, _u16 right,
                            _u16 bottom, _u16 color);
 #ifdef __cplusplus
 }
