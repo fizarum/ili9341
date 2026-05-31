@@ -92,30 +92,25 @@ typedef struct {
   /** @brief Basic spi data transmit */
   bool (*transmit_data)(const _u8* data, const size_t length);
 
-  /** @brief transmit byte n times */
-  bool (*transmit_data_times)(const _u16 value, _u16 times);
-
   bool (*lighten)(const _u8 percents);
-} display_t;
+} spi_display_t;
 
-void Ili9341Init(display_t* dev);
+void display_init(spi_display_t* dev);
 
-bool Ili9341PowerOn(display_t* dev, bool on);
-bool ILI9341Sleep(display_t* dev);
-bool ILI9341Wakeup(display_t* dev);
+bool display_set_on_off(spi_display_t* dev, bool on);
+bool display_sleep(spi_display_t* dev);
+bool display_wakeup(spi_display_t* dev);
 
-bool Ili9341Rotate(display_t* dev, const Rotation_t rotation);
-bool Ili9341SetInversion(display_t* dev, const bool inversionOn);
-bool Ili9341SetColorMode(display_t* dev, const ColorMode_t mode);
-void Ili9341SetScrollArea(display_t* dev, _u16 tfa, _u16 vsa, _u16 bfa);
-void Ili9341ResetScrollArea(display_t* dev, _u16 vsa);
-void Ili9341Scroll(display_t* dev, _u16 vsp);
+bool display_rotate(spi_display_t* dev, const Rotation_t rotation);
+bool display_set_inversion(spi_display_t* dev, const bool inversion);
+bool display_set_color_mode(spi_display_t* dev, const ColorMode_t mode);
+void display_set_scroll_area(spi_display_t* dev, _u16 tfa, _u16 vsa, _u16 bfa);
+void display_reset_scroll_area(spi_display_t* dev, _u16 vsa);
+void display_scroll(spi_display_t* dev, _u16 vsp);
 
-void Ili9341DrawPixel(display_t* dev, _u16 left, _u16 top, _u16 color);
-void Ili9341DrawPixels(display_t* dev, _u16 left, _u16 top, _u16 right,
-                       _u16 bottom, _u16* colors, size_t colorsSize);
-void Ili9341DrawPixelTimes(display_t* dev, _u16 left, _u16 top, _u16 right,
-                           _u16 bottom, _u16 color);
+void display_draw_pixel(spi_display_t* dev, _u16 left, _u16 top, _u16 color);
+void display_draw_pixels(spi_display_t* dev, _u16 left, _u16 top, _u16 right,
+                         _u16 bottom, _u16* colors, size_t size);
 #ifdef __cplusplus
 }
 #endif
